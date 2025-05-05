@@ -585,8 +585,8 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
             >
               <Image
                 src={getSafeImageUrl(imagePreview)}
-                alt="Prévisualisation du menu"
-                className="w-full rounded-xl h-full object-cover"
+                alt="Prévisualisation du plat"
+                className="w-full rounded-xl h-full object-contain"
                 width={140}
                 height={120}
               />
@@ -609,7 +609,7 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
               exit={{ opacity: 0 }}
             >
               <div className="p-2 px-3 bg-[#D9D9D9] rounded-xl">
-                <p className="text-sm text-gray-600">Ajouter une photo du menu</p>
+                <p className="text-sm text-gray-600">Ajouter une photo du plat</p>
               </div>
               <input
                 ref={fileInputRef}
@@ -822,30 +822,7 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
                   {selectedIngredients.length}/3
                 </div>
               </div>
-              {/* Affichage des ingrédients sélectionnés */}
-              <div className="flex flex-wrap gap-2 mt-2">
-                {selectedIngredients.map((id) => {
-                  const option = ingredientOptions.find((opt) => opt.value === id);
-                  return option ? (
-                    <div key={id} className="flex items-center bg-[#f5f5f5] rounded-full px-3 py-1">
-                      <span className="text-[#595959] text-xs">{option.label}</span>
-                      {ingredientQuantities[id] > 1 && (
-                        <span className="ml-1 text-[#F17922] text-xs">x{ingredientQuantities[id]}</span>
-                      )}
-                      <button
-                        type="button"
-                        className="ml-2 text-[#595959] hover:text-[#F17922]"
-                        onClick={() => {
-                          const newValue = selectedIngredients.filter((item) => item !== id);
-                          handleIngredientChange(newValue);
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ) : null;
-                })}
-              </div>
+         
             </motion.div>
 
             {/* Accompagnements */}
@@ -868,30 +845,7 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
                   {selectedAccompagnements.length}/3
                 </div>
               </div>
-              {/* Affichage des accompagnements sélectionnés */}
-              <div className="flex flex-wrap gap-2 mt-2">
-                {selectedAccompagnements.map((id) => {
-                  const option = accompagnementOptions.find((opt) => opt.value === id);
-                  return option ? (
-                    <div key={id} className="flex items-center bg-[#f5f5f5] rounded-full px-3 py-1">
-                      <span className="text-[#595959] text-xs">{option.label}</span>
-                      {accompagnementQuantities[id] > 1 && (
-                        <span className="ml-1 text-[#F17922] text-xs">x{accompagnementQuantities[id]}</span>
-                      )}
-                      <button
-                        type="button"
-                        className="ml-2 text-[#595959] hover:text-[#F17922]"
-                        onClick={() => {
-                          const newValue = selectedAccompagnements.filter((item) => item !== id);
-                          handleAccompagnementChange(newValue);
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ) : null;
-                })}
-              </div>
+            
             </motion.div>
 
             {/* Boissons */}
@@ -914,30 +868,7 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
                   {selectedBoissons.length}/3
                 </div>
               </div>
-              {/* Affichage des boissons sélectionnées */}
-              <div className="flex flex-wrap gap-2 mt-2">
-                {selectedBoissons.map((id) => {
-                  const option = boissonOptions.find((opt) => opt.value === id);
-                  return option ? (
-                    <div key={id} className="flex items-center bg-[#f5f5f5] rounded-full px-3 py-1">
-                      <span className="text-[#595959] text-xs">{option.label}</span>
-                      {boissonQuantities[id] > 1 && (
-                        <span className="ml-1 text-[#F17922] text-xs">x{boissonQuantities[id]}</span>
-                      )}
-                      <button
-                        type="button"
-                        className="ml-2 text-[#595959] hover:text-[#F17922]"
-                        onClick={() => {
-                          const newValue = selectedBoissons.filter((item) => item !== id);
-                          handleBoissonChange(newValue);
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ) : null;
-                })}
-              </div>
+           
             </motion.div>
           </div>
         </div>

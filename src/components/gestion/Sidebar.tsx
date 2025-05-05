@@ -1,10 +1,10 @@
 "use client"
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react'; 
 
 interface SidebarItemProps {
   icon: React.ReactNode;
@@ -24,6 +24,7 @@ interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
 }
+
 
 const SidebarIcon: React.FC<SidebarIconProps> = ({ defaultIcon, whiteIcon, alt, active }) => {
   return (
@@ -58,7 +59,6 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, active = false, 
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const router = useRouter();
   const { logout } = useAuthStore();
-
   const handleLogout = async () => {
     try {
       await logout();
@@ -68,6 +68,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     }
   };
 
+  
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <aside className="w-64 bg-white shadow-lg h-screen flex flex-col transition-transform duration-300 ease-in-out">

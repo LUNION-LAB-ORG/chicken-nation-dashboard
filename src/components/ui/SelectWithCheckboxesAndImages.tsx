@@ -166,11 +166,7 @@ const SelectWithCheckboxesAndImages = ({
                       <path d="M1 5L5 9L13 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   )}
-                  {!value.includes(option.value) && (
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M1 5L5 9L13 1" stroke="#F17922" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  )}
+                  
                 </div>
               </div>
             ))}

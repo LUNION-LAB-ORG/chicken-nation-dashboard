@@ -1,6 +1,6 @@
  
 // Exporter tous les services
-export * from './api';
+export { betterApiClient } from './betterApiClient';
 export * from './authService';
 export * from './categoryService';
 export * from './dishRestaurantService';

@@ -4,6 +4,56 @@ import Image from "next/image"
 import { LucideIcon } from "lucide-react"
 import React from "react"
 
+interface CircularProgressProps {
+  percentage: number
+  color?: string
+  size?: number
+  strokeWidth?: number
+}
+
+const CircularProgress: React.FC<CircularProgressProps> = ({
+  percentage,
+  color = "#FFC107",
+  size = 40,
+  strokeWidth = 6
+}) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percentage / 100) * circumference;
+  
+  return (
+    <div className="relative flex items-center justify-center">
+      <svg width={size} height={size} className="transform -rotate-90">
+        {/* Cercle de fond */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#F5F5F5"
+          strokeWidth={strokeWidth}
+        />
+        {/* Cercle de progression */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinejoin="round"
+        />
+      </svg>
+      <div className="absolute text-xs font-regular text-[#F17922]" >
+        {percentage}%
+      </div>
+    </div>
+  )
+}
+
 interface GenericStatCardProps {
   title: string
   value: string | number
@@ -17,6 +67,10 @@ interface GenericStatCardProps {
     value: number
     isPositive: boolean
   }
+  objective?: {
+    value: string
+    percentage: number
+  }
   className?: string
 }
 
@@ -24,45 +78,53 @@ export function GenericStatCard({
   title,
   value,
   unit = "",
-  badgeColor = "#007AFF",
+  badgeColor = "#EA4335",
   badgeText,
   icon: Icon,
   iconColor = "#F17922",
   iconImage,
   trend,
+  objective,
   className = ""
 }: GenericStatCardProps) {
   return (
-    <div className={`w-full rounded-3xl relative border border-gray-200 bg-white p-6 shadow-sm ${className}`}>
+    <div className={`w-full rounded-3xl relative border border-gray-100 bg-white p-0 shadow-sm overflow-hidden ${className}`}>
+      {/* Badge en haut */}
       {badgeText && (
         <div 
-          className="rounded-b-xl h-7 absolute top-0 left-5 px-2 text-white flex items-center justify-center"
+          className="py-[3px] px-4 text-[#fdf3ec] font-regular rounded-b-xl absolute top-0 left-4"
           style={{ backgroundColor: badgeColor }}
         >
-          <span className="text-xs ml-4 font-sofia-regular font-normal">{badgeText}</span>
+          <span className="text-sm">{badgeText}</span>
         </div>
       )}
       
-      <div className="flex items-center justify-between mt-6">
-        <div>
-          <h2 className="text-xl font-medium text-[#9796A1]">
-            {value} {unit}
-            {trend && (
-              <span className={`ml-2 text-sm ${trend.isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                {trend.isPositive ? '↑' : '↓'} {trend.value}%
-              </span>
+      {/* Contenu principal */}
+      <div className="pt-10 pb-2 px-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-[20px] font-medium text-[#9796a1]">
+              {value} {unit}
+            </h2>
+            {title && title !== badgeText && (
+              <p className="text-sm text-gray-500 mt-1">{title}</p>
             )}
-          </h2>
-          {title && title !== badgeText && (
-            <p className="text-sm text-gray-500 mt-1">{title}</p>
-          )}
-        </div>
-        
-        <div style={{ color: iconColor }}>
-          {Icon && <Icon size={30} strokeWidth={2} />}
-          {iconImage && <Image src={iconImage} alt={title} width={30} height={30} />}
+          </div>
+          
+          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ color: iconColor }}>
+            {Icon && <Icon size={30} strokeWidth={2} />}
+            {iconImage && <Image src={iconImage} alt={title} width={36} height={36} />}
+          </div>
         </div>
       </div>
+      
+      {/* Section objectif avec fond beige */}
+      {objective && (
+        <div className="bg-[#FFF8EE] p-3 py-2 flex items-center justify-between">
+          <span className="text-sm text-gray-700">{objective.value}</span>
+          <CircularProgress percentage={objective.percentage} />
+        </div>
+      )}
     </div>
   )
 }

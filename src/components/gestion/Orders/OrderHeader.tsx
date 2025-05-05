@@ -22,12 +22,7 @@ function OrderHeader({ currentView = 'list', onBack, onCreateMenu }: OrderHeader
           onSearch: (value) => console.log('Searching:', value)
         }}
         actions={[
-         
-          {
-            label: "Créer une commande",
-            onClick: onCreateMenu,
           
-          },
           {
             label: "Exporter",
             onClick: onCreateMenu,

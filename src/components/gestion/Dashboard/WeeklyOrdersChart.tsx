@@ -14,6 +14,7 @@ import {
 } from 'chart.js'
 import { ChevronDown } from 'lucide-react'
 import './WeeklyOrdersChart.css'
+import Image from 'next/image'
 
 ChartJS.register(
   CategoryScale,
@@ -103,18 +104,49 @@ const WeeklyOrdersChart: React.FC<WeeklyOrdersChartProps> = ({ data = defaultDat
         }
       },
       y: {
+        min: 0,
+        max: 100,
+        // Ajoute le tick 50 pour la grille mais pas pour les labels
+        afterBuildTicks: (axis) => {
+          const tickValues = axis.ticks.map(t => t.value);
+          if (!tickValues.includes(50)) {
+            // Ajoute 50 entre 40 et 60
+            const idx = tickValues.findIndex(v => v > 50);
+            axis.ticks.splice(idx === -1 ? axis.ticks.length : idx, 0, { value: 50, major: true });
+          }
+        },
         grid: {
-          color: 'rgba(0, 0, 0, 0.05)',
+          color: (context: any) => {
+            const value = context.tick?.value;
+            if (value === 50) {
+              return '#FDE9DA'; 
+            }
+            if ([0, 100].includes(value)) {
+              return 'rgba(241, 121, 34, 0.1)';  
+            }
+            return 'transparent'; 
+          },
+          drawTicks: false,
+          lineWidth: 2, 
         },
         border: {
           display: false,
         },
         ticks: {
           color: '#9796A1',
-          stepSize: 20,
+          font: {
+            size: 12,
+          },
           padding: 10,
+          stepSize: 20,
+          callback: function(value: number) {
+            // Affiche TOUS les labels principaux
+            if ([0, 20, 40, 60, 80, 100].includes(Number(value))) {
+              return value;
+            }
+            return '';
+          },
         },
-        max: 100,
       },
     },
   }
@@ -123,8 +155,8 @@ const WeeklyOrdersChart: React.FC<WeeklyOrdersChartProps> = ({ data = defaultDat
     <div className="weekly-orders-chart">
       <div className="weekly-orders-header">
         <div className="weekly-orders-title">
-          <span className="weekly-orders-star">★</span>
-          <h3 className="text-base font-medium text-gray-800">Commandes évaluées cette semaine</h3>
+        <Image className='mt-1' src="/icons/chicken.png" alt="circle" width={14} height={14} />
+          <h3 className="text-[#F17922] font-bold text-[15px] ml-2">Commandes évaluées cette semaine</h3>
         </div>
 
         <div className="date-selector">
@@ -155,7 +187,7 @@ const WeeklyOrdersChart: React.FC<WeeklyOrdersChartProps> = ({ data = defaultDat
         </div>
       </div>
 
-      <div style={{ width: '100%', height: 220 }}>
+      <div style={{ width: '100%', height: 200 }}>
         <Bar data={chartData} options={options} />
       </div>
     </div>

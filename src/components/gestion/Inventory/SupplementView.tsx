@@ -234,7 +234,7 @@ export default function SupplementView({
                 alt={product.name}
                 width={56}
                 height={56}
-                className="object-cover w-full h-full"
+                className="object-contain w-full h-full"
               />
             </div>
             <div className="flex-1 min-w-0">
@@ -286,55 +286,7 @@ export default function SupplementView({
             </button>
           </div>
         )}
-      </div>
-
-      {/* Supplement Preview */}
-      {safeProducts.length > 0 && (
-        <div className="w-[300px] border-[1.5px] border-[#D4D4D8]/60 rounded-2xl">
-        {/* Aperçu Section */}
-        <div className="bg-white rounded-t-2xl p-4 px-2  mb-10">
-          <h3 className="text-[20px] text-[#71717A] font-medium mb-6 bg-[#F4F4F5] rounded-lg p-2">Aperçu</h3>
-
-          <div className="space-y-6 px-2">
-            <div className="flex items-center flex-row justify-between gap-2">
-              <span className="text-[16px] text-[#71717A]">Total des produits</span>
-              <span className="text-[16px] text-[#F17922] font-medium">798</span>
-            </div>
-            <div className="flex items-center flex-row justify-between gap-2">
-              <span className="text-[16px] text-[#71717A]">Vendus</span>
-              <span className="text-[16px] text-[#F17922] font-medium">176</span>
-            </div>
-            <div className="flex items-center flex-row justify-between gap-2">
-              <span className="text-[16px] text-[#71717A]">En réserve</span>
-              <span className="text-[16px] text-[#F17922] font-medium">622</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Supplements Section */}
-        <div className="bg-white rounded-b-2xl p-4 px-2">
-          <h3 className="text-[20px] text-[#71717A] font-medium mb-6 bg-[#F4F4F5] rounded-lg p-2">Produits</h3>
-
-          <div className="grid grid-cols-5 gap-2 px-2">
-            {Array.from({ length: 20 }).map((_, index) => (
-              <div 
-                key={index}
-                className="relative aspect-square rounded-2xl overflow-hidden bg-[#E4E4E7]"
-              >
-                <Image
-                  src="/images/plat.png"
-                  alt={`Product ${index + 1}`}
-                  width={50}
-                  height={50}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black/20"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    )}
+      </div>  
     </div>
   )
 }

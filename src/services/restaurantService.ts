@@ -47,6 +47,9 @@ interface RestaurantResponse {
   data: Restaurant;
 }
 
+import { getAuthToken, handleAuthError, fetchWithAuth } from '@/utils/authUtils';
+import { formatImageUrl } from '@/utils/imageHelpers';
+
 const API_URL = process.env.NEXT_PUBLIC_API_PREFIX;
  
 const RESTAURANTS_URL =   API_URL + '/restaurants';
@@ -54,32 +57,13 @@ const RESTAURANTS_URL =   API_URL + '/restaurants';
  
 export async function getAllRestaurants(): Promise<Restaurant[]> {
   try {
-    const token = localStorage.getItem('chicken-nation-auth') 
-      ? JSON.parse(localStorage.getItem('chicken-nation-auth') || '{}')?.state?.accessToken 
-      : null;
+    const response = await fetchWithAuth<{data: any[]}>(`${RESTAURANTS_URL}`);
     
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-    
-    const response = await fetch(RESTAURANTS_URL, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-  
-    return data.data.map((restaurant: any) => ({
+    return response.data.map((restaurant: any) => ({
       ...restaurant,
       active: restaurant?.entity_status === 'ACTIVE',
-      createdAt: restaurant?.created_at
+      createdAt: restaurant?.created_at,
+      image: formatImageUrl(restaurant?.image)
     }));
   } catch (error) {
     console.error('Erreur lors de la récupération des restaurants:', error);
@@ -90,33 +74,13 @@ export async function getAllRestaurants(): Promise<Restaurant[]> {
  
 export async function getRestaurantById(id: string): Promise<Restaurant> {
   try {
-    const token = localStorage.getItem('chicken-nation-auth') 
-      ? JSON.parse(localStorage.getItem('chicken-nation-auth') || '{}')?.state?.accessToken 
-      : null;
+    const response = await fetchWithAuth<{data?: any}>(`${RESTAURANTS_URL}/${id}`);
     
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-    
-    const response = await fetch(`${RESTAURANTS_URL}/${id}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-     let restaurantData;
-    if (data && data.data) {
-      restaurantData = data.data;
-    } else if (data && typeof data === 'object') {
-       restaurantData = data;
+    let restaurantData;
+    if (response && response.data) {
+      restaurantData = response.data;
+    } else if (response && typeof response === 'object') {
+       restaurantData = response;
     } else {
       throw new Error('Format de réponse API inattendu');
     }
@@ -132,13 +96,14 @@ export async function getRestaurantById(id: string): Promise<Restaurant> {
       }
     }
     
-     return {
+    return {
       ...restaurantData,
-      active: restaurantData?.entity_status === 'ACTIVE' || restaurantData?.active === true,
-      createdAt: restaurantData?.created_at || restaurantData?.createdAt
+      active: restaurantData?.entity_status === 'ACTIVE',
+      createdAt: restaurantData?.created_at,
+      image: formatImageUrl(restaurantData?.image)
     };
   } catch (error) {
-    console.error(`Erreur lors de la récupération du restaurant ${id}:`, error);
+    console.error('Erreur lors de la récupération du restaurant:', error);
     throw error;
   }
 }
@@ -148,72 +113,49 @@ export async function getRestaurantById(id: string): Promise<Restaurant> {
  */
 export async function createRestaurant(formData: FormData): Promise<Restaurant> {
   try {
-    const token = localStorage.getItem('chicken-nation-auth') 
-      ? JSON.parse(localStorage.getItem('chicken-nation-auth') || '{}')?.state?.accessToken 
-      : null;
-    
+    const token = getAuthToken();
     if (!token) {
       throw new Error('Authentication required');
     }
-
-     const scheduleStr = formData.get('schedule');
-    if (scheduleStr && typeof scheduleStr === 'string') {
-       formData.delete('schedule');
-      
-      try {
-         const scheduleData = JSON.parse(scheduleStr);
-        
-         if (Array.isArray(scheduleData)) {
-           const formattedSchedule = scheduleData.map(item => {
-             if (typeof item === 'object' && Object.keys(item).length === 1) {
-              return item;
-            }
-            
-      
-            return item;
-          });
-          
-           formData.set('schedule', JSON.stringify(formattedSchedule));
-        } else {
-          console.error('Les données de schedule ne sont pas un tableau:', scheduleData);
-        }
-      } catch (error) {
-        console.error('Erreur lors du parsing du schedule:', error);
-      }
+    
+    // Vérifier que le FormData contient les champs obligatoires
+    if (!formData.has('name')) {
+      throw new Error('Le nom du restaurant est obligatoire');
+    }
+    
+    if (!formData.has('description')) {
+      throw new Error('La description du restaurant est obligatoire');
+    }
+    
+    if (!formData.has('address')) {
+      throw new Error('L\'adresse du restaurant est obligatoire');
+    }
+    
+    if (!formData.has('phone')) {
+      throw new Error('Le téléphone du restaurant est obligatoire');
+    }
+    
+    if (!formData.has('email')) {
+      throw new Error('L\'email du restaurant est obligatoire');
     }
     
  
-    const response = await fetch(RESTAURANTS_URL, {
+    const response = await fetchWithAuth<{data: any}>(`${RESTAURANTS_URL}`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-       },
       body: formData
     });
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(` Erreur ${response.status}:`, errorText);
-      throw new Error(`Erreur: ${response.status} - ${errorText}`);
+    if (!response || !response.data) {
+      throw new Error('Réponse API invalide');
     }
     
-    const data = await response.json();
-    
-  
-    const restaurant = data.restaurant || data.data;
-    
-     if (data.managerCredentials) {
-      restaurant.manager = {
-        email: data.managerCredentials.email,
-        password: data.managerCredentials.password
-      };
-      
-    }
+    const restaurant = response.data;
     
     return {
       ...restaurant,
       active: restaurant?.entity_status === 'ACTIVE',
-      createdAt: restaurant?.created_at
+      createdAt: restaurant?.created_at,
+      image: formatImageUrl(restaurant?.image)
     };
   } catch (error) {
     console.error(` Erreur:`, error);
@@ -224,78 +166,49 @@ export async function createRestaurant(formData: FormData): Promise<Restaurant> 
  
 export async function createRestaurantJSON(restaurantData: any): Promise<Restaurant> {
   try {
-    const token = localStorage.getItem('chicken-nation-auth') 
-      ? JSON.parse(localStorage.getItem('chicken-nation-auth') || '{}')?.state?.accessToken 
-      : null;
-    
+    const token = getAuthToken();
     if (!token) {
       throw new Error('Authentication required');
     }
     
- 
+    // Vérifier les champs obligatoires
+    if (!restaurantData.name) {
+      throw new Error('Le nom du restaurant est obligatoire');
+    }
     
-    const response = await fetch(RESTAURANTS_URL, {
+    const response = await fetchWithAuth<{data: any}>(`${RESTAURANTS_URL}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(restaurantData)
     });
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Erreur API:', response.status, errorText);
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    if (!response || !response.data) {
+      throw new Error('Réponse API invalide');
     }
     
-    const data = await response.json();
-    console.log('Réponse API création restaurant (JSON):', data);
+    const restaurant = response.data;
     
-  
-    const restaurant = data.restaurant || data.data;
-    
-     if (data.managerCredentials) {
-      restaurant.manager = {
-        email: data.managerCredentials.email,
-        password: data.managerCredentials.password
-      };
-      
-      console.log('Identifiants du manager récupérés directement:', restaurant.manager);
-      return {
-        ...restaurant,
-        active: restaurant?.entity_status === 'ACTIVE',
-        createdAt: restaurant?.created_at
-      };
-    }
- 
+    // Si des informations de manager sont fournies, récupérer le manager
     if (restaurant && restaurant.id && (restaurantData.managerEmail || restaurantData.managerFullname)) {
       try {
-         const managerResponse = await fetch(`${RESTAURANTS_URL}/${restaurant.id}/manager`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+         const managerResponse = await fetchWithAuth<{data: any}>(`${RESTAURANTS_URL}/${restaurant.id}/manager`);
         
-        if (managerResponse.ok) {
-          const managerData = await managerResponse.json();
-          console.log('Identifiants du manager récupérés (JSON):', managerData);
-          
-          if (managerData.data) {
-            restaurant.manager = managerData.data;
-          }
+        if (managerResponse && managerResponse.data) {
+          const managerData = managerResponse.data;
+          restaurant.manager = managerData;
         }
-      } catch (managerError) {
-        console.error('Erreur lors de la récupération des identifiants du manager (JSON):', managerError);
-       }
+      } catch (error) {
+        console.error('Erreur lors de la récupération du manager:', error);
+      }
     }
     
     return {
       ...restaurant,
       active: restaurant?.entity_status === 'ACTIVE',
-      createdAt: restaurant?.created_at
+      createdAt: restaurant?.created_at,
+      image: formatImageUrl(restaurant?.image)
     };
   } catch (error) {
     console.error('Erreur lors de la création du restaurant (JSON):', error);
@@ -305,71 +218,32 @@ export async function createRestaurantJSON(restaurantData: any): Promise<Restaur
  
 export async function updateRestaurant(id: string, formData: FormData): Promise<Restaurant> {
   try {
-    const token = localStorage.getItem('chicken-nation-auth') 
-      ? JSON.parse(localStorage.getItem('chicken-nation-auth') || '{}')?.state?.accessToken 
-      : null;
-    
+    const token = getAuthToken();
     if (!token) {
       throw new Error('Authentication required');
     }
     
-     const scheduleStr = formData.get('schedule');
-    if (scheduleStr && typeof scheduleStr === 'string') {
-       formData.delete('schedule');
-      
-      try {
-        const scheduleData = JSON.parse(scheduleStr);
-        
-         if (Array.isArray(scheduleData)) {
-           const formattedSchedule = scheduleData.map(item => {
-             if (typeof item === 'object' && Object.keys(item).length === 1) {
-              return item;
-            }
-            
-            
-            return item;
-          });
-          
-           formData.set('schedule', JSON.stringify(formattedSchedule));
-        } else {
-        
-        }
-      } catch (error) {
-        console.error('Erreur lors du parsing du schedule:', error);
-      }
-    }
+    console.log('Envoi de la requête PATCH avec FormData');
     
-     console.log(' Contenu du FormData:');
-    for (const pair of formData.entries()) {
-      console.log(`${pair[0]}: ${typeof pair[1] === 'object' ? 'File/Object' : pair[1]}`);
-    }
-    
-    console.log(' Envoi de la requête PATCH avec FormData');
-    
-    const response = await fetch(`${RESTAURANTS_URL}/${id}`, {
+    const response = await fetchWithAuth<{data: any}>(`${RESTAURANTS_URL}/${id}`, {
       method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${token}`
-       },
       body: formData
     });
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(` Erreur ${response.status}:`, errorText);
-      throw new Error(`Erreur: ${response.status} - ${errorText}`);
+    if (!response || !response.data) {
+      throw new Error('Réponse API invalide');
     }
     
-    const data = await response.json();
-    const restaurant = data.data || data;
+    const restaurant = response.data;
     
     return {
       ...restaurant,
       active: restaurant?.entity_status === 'ACTIVE',
-      createdAt: restaurant?.created_at
+      createdAt: restaurant?.created_at,
+      image: formatImageUrl(restaurant?.image)
     };
   } catch (error) {
-    console.error(` Erreur:`, error);
+    console.error(`Erreur lors de la mise à jour du restaurant:`, error);
     throw error;
   }
 }
@@ -379,34 +253,30 @@ export async function updateRestaurant(id: string, formData: FormData): Promise<
  */
 export async function updateRestaurantStatus(id: string, active: boolean): Promise<Restaurant> {
   try {
-    const token = localStorage.getItem('chicken-nation-auth') 
-      ? JSON.parse(localStorage.getItem('chicken-nation-auth') || '{}')?.state?.accessToken 
-      : null;
-    
+    const token = getAuthToken();
     if (!token) {
       throw new Error('Authentication required');
     }
     
-     const response = await fetch(`${RESTAURANTS_URL}/${id}/activateDeactivate`, {
+    const response = await fetchWithAuth<{data: any}>(`${RESTAURANTS_URL}/${id}/activateDeactivate`, {
       method: 'PATCH',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ active })
     });
     
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    if (!response || !response.data) {
+      throw new Error('Réponse API invalide');
     }
     
-    const data = await response.json();
+    const restaurant = response.data;
     
-    const restaurant = data.data;
     return {
       ...restaurant,
       active: restaurant?.entity_status === 'ACTIVE',
-      createdAt: restaurant?.created_at
+      createdAt: restaurant?.created_at,
+      image: formatImageUrl(restaurant?.image)
     };  
   } catch (error) {
     throw error;
@@ -418,25 +288,16 @@ export async function updateRestaurantStatus(id: string, active: boolean): Promi
  */
 export async function deleteRestaurant(id: string): Promise<void> {
   try {
-    const token = localStorage.getItem('chicken-nation-auth') 
-      ? JSON.parse(localStorage.getItem('chicken-nation-auth') || '{}')?.state?.accessToken 
-      : null;
-    
+    const token = getAuthToken();
     if (!token) {
       throw new Error('Authentication required');
     }
     
-    const response = await fetch(`${RESTAURANTS_URL}/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+    const response = await fetchWithAuth<void>(`${RESTAURANTS_URL}/${id}`, {
+      method: 'DELETE'
     });
-    
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
+ 
+    console.log('Restaurant supprimé avec succès');
   } catch (error) {
     console.error(`Erreur lors de la suppression du restaurant ${id}:`, error);
     throw error;
@@ -448,39 +309,20 @@ export async function deleteRestaurant(id: string): Promise<void> {
  */
 export async function getRestaurantManager(id: string): Promise<any> {
   try {
-    const token = localStorage.getItem('chicken-nation-auth') 
-      ? JSON.parse(localStorage.getItem('chicken-nation-auth') || '{}')?.state?.accessToken 
-      : null;
-    
+    const token = getAuthToken();
     if (!token) {
       throw new Error('Authentication required');
     }
     
-    const response = await fetch(`${RESTAURANTS_URL}/${id}/manager`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    const response = await fetchWithAuth<{data: any}>(`${RESTAURANTS_URL}/${id}/manager`);
     
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    if (!response || !response.data) {
+      throw new Error('Réponse API invalide');
     }
     
-    const data = await response.json();
-    
-    
-     if (data && typeof data === 'object' && data.fullname) {
-      return data;
-    }
-    
-     if (data && data.data) {
-      return data.data;
-    }
-    
-    throw new Error('Format de réponse API inattendu pour le manager');
+    return response.data;
   } catch (error) {
+    console.error(`Erreur lors de la récupération du manager du restaurant ${id}:`, error);
     throw error;
   }
 }
@@ -488,30 +330,20 @@ export async function getRestaurantManager(id: string): Promise<any> {
  
 export async function getRestaurantUsers(id: string): Promise<any[]> {
   try {
-    const token = localStorage.getItem('chicken-nation-auth') 
-      ? JSON.parse(localStorage.getItem('chicken-nation-auth') || '{}')?.state?.accessToken 
-      : null;
-    
+    const token = getAuthToken();
     if (!token) {
       throw new Error('Authentication required');
     }
     
-    const response = await fetch(`${RESTAURANTS_URL}/${id}/users`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    const response = await fetchWithAuth<{data: any[]}>(`${RESTAURANTS_URL}/${id}/users`);
     
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    if (!response || !response.data) {
+      throw new Error('Réponse API invalide');
     }
     
-    const data = await response.json();
-    return data.data;
+    return response.data;
   } catch (error) {
-    
+    console.error(`Erreur lors de la récupération des utilisateurs du restaurant ${id}:`, error);
     throw error;
   }
 }

@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useState } from 'react'; 
+import React, { useState, useEffect } from 'react'; 
 import ClientHeader from './ClientHeader';
 import { ClientsTable } from './ClientsTable';
 import { ClientProfile } from './ClientProfile';
 import AddMenu from '../Menus/AddMenu'; 
 import { UserCounter } from './UserCounter';
 import { GlobalReviews } from './GlobalReviews'; 
+import { useCustomerStore } from '@/store/customerStore';
 
 interface ClientState {
   view: 'list' | 'create' | 'edit' | 'view' | 'reviews';
@@ -25,24 +26,44 @@ export default function Clients({ setActiveTab }: ClientsProps) {
     showConnectedOnly: false
   });
 
+  // Utiliser le store client
+  const { 
+    customers, 
+    fetchCustomers, 
+    setShowConnectedOnly, 
+    pagination, 
+    isLoading,
+    error 
+  } = useCustomerStore();
+
+  // Charger les clients au montage du composant
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
+
   const handleViewChange = (view: 'list' | 'create' | 'edit' | 'view' | 'reviews', clientId?: string | null) => {
-    console.log("Changing view to:", view, "with client ID:", clientId);
+    
     setClientState(prev => ({ ...prev, view, selectedClientId: clientId }));
+    
   };
 
   const handleClientSelect = (clientId: string) => {
+   
+    
     // Si on clique sur le même client, on désélectionne
     if (clientState.selectedClientId === clientId) {
-      setClientState(prev => ({ ...prev, selectedClientId: null }));
+       setClientState(prev => ({ ...prev, selectedClientId: null }));
     } else {
       // Sinon on sélectionne le client sans changer de vue
-      setClientState(prev => ({ ...prev, selectedClientId: clientId }));
+       setClientState(prev => ({ ...prev, selectedClientId: clientId }));
     }
+    
   };
 
   const handleClientDoubleClick = (clientId: string) => {
    
     handleViewChange('view', clientId);
+   
   };
 
   const handleBack = () => {
@@ -60,12 +81,13 @@ export default function Clients({ setActiveTab }: ClientsProps) {
   };
 
   const toggleConnectedFilter = () => {
-    console.log("Toggle connected filter");
-    setClientState(prev => ({ 
+     setClientState(prev => ({ 
       ...prev, 
       showConnectedOnly: !prev.showConnectedOnly,
-      selectedClientId: null  // Désélectionner le client lors du changement de filtre
+      selectedClientId: null  
     }));
+ 
+    setShowConnectedOnly(!clientState.showConnectedOnly);
   };
 
   // Fonction pour rediriger vers les commandes
@@ -92,7 +114,7 @@ export default function Clients({ setActiveTab }: ClientsProps) {
           
           {/* UserCounter uniquement sur la vue liste */}
           {clientState.view === 'list' && (
-            <UserCounter count={88} />
+            <UserCounter count={pagination.totalItems} />
           )}
         </div>
 
@@ -103,6 +125,7 @@ export default function Clients({ setActiveTab }: ClientsProps) {
               onClientClick={handleClientSelect}
               onClientDoubleClick={handleClientDoubleClick}
               connectedOnly={clientState.showConnectedOnly}
+              isLoading={isLoading}
             />
           </div>
         )}

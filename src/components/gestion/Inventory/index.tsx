@@ -419,10 +419,8 @@ export default function Inventory() {
 
           
             {currentView === 'categories' ? (
-              <div className="bg-[#F17922] rounded-[10px] lg:px-8 p-2 lg:py-2">
-                <span className="text-[10px] lg:text-[14px] text-white font-bold">
-                  Toutes les catégories
-                </span>
+              <div>
+                
               </div>
             ) : (
               <SupplementTabs 

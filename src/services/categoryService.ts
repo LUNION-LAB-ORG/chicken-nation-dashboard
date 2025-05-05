@@ -1,5 +1,4 @@
-
-import { api } from './api';
+import { betterApiClient } from './betterApiClient';
 import { formatImageUrl } from '@/utils/imageHelpers';
 import { MenuItem } from '@/types';
 
@@ -36,7 +35,7 @@ export interface UpdateCategoryDto {
  */
 export const getAllCategories = async (): Promise<Category[]> => {
   try {
-    const response = await api.get<Category[]>('/categories', false);
+    const response = await betterApiClient.get<Category[]>('/categories');
     return response;
   } catch (error) {
     console.error('Erreur lors de la récupération des catégories:', error);
@@ -46,12 +45,12 @@ export const getAllCategories = async (): Promise<Category[]> => {
 
  
 export const getCategoryById = async (id: string): Promise<Category> => {
-  return api.get<Category>(`${CATEGORIES_ENDPOINT}/${id}`, false); 
+  return betterApiClient.get<Category>(`${CATEGORIES_ENDPOINT}/${id}`); 
 };
  
 export const getCategoryWithDishes = async (categoryId: string): Promise<CategoryWithDishes> => {
   try {
-    const response = await api.get<CategoryWithDishes>(`${CATEGORIES_ENDPOINT}/${categoryId}`, true);
+    const response = await betterApiClient.get<CategoryWithDishes>(`${CATEGORIES_ENDPOINT}/${categoryId}`);
     const formattedResponse: CategoryWithDishes = {
       ...response as CategoryWithDishes,
       dishes: []
@@ -74,7 +73,7 @@ export const getCategoryWithDishes = async (categoryId: string): Promise<Categor
  
 export const getMenusByCategoryId = async (categoryId: string): Promise<MenuItem[]> => {
   try {
-    const response = await api.get<CategoryWithDishes>(`/categories/${categoryId}`, true);
+    const response = await betterApiClient.get<CategoryWithDishes>(`/categories/${categoryId}`);
     if (response && response.dishes && Array.isArray(response.dishes)) {
       const formattedDishes = response.dishes.map(dish => ({
         ...dish,
@@ -90,17 +89,17 @@ export const getMenusByCategoryId = async (categoryId: string): Promise<MenuItem
 };
  
 export const createCategory = async (formData: FormData): Promise<Category> => {
-  return api.post<Category>(CATEGORIES_ENDPOINT, formData, true);  
+  return betterApiClient.postFormData<Category>(CATEGORIES_ENDPOINT, formData);
 };
  
 export const updateCategory = async (id: string, formData: FormData): Promise<Category> => {
   if (!formData.has('id')) {
     formData.append('id', id);
   }
-  return api.patch<Category>(`${CATEGORIES_ENDPOINT}/${id}`, formData, true); 
+  return betterApiClient.postFormData<Category>(`${CATEGORIES_ENDPOINT}/${id}`, formData); 
 };
 
  
 export const deleteCategory = async (id: string): Promise<void> => {
-  return api.delete<void>(`${CATEGORIES_ENDPOINT}/${id}`, true); 
+  return betterApiClient.delete<void>(`${CATEGORIES_ENDPOINT}/${id}`); 
 };
