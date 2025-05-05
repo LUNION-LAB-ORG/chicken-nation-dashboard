@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { sofia, urbanist } from './fonts';
 import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 // Métadonnées de l'application
 export const metadata: Metadata = {
@@ -20,14 +21,16 @@ export default function RootLayout({
       <head>
       </head>
       <body className="font-sofia" suppressHydrationWarning>
-        <Toaster position="top-right" toastOptions={{
-          duration: 3000,
-          style: {
-            background: '#333',
-            color: '#fff',
-          },
-        }} />
-        {children}
+        <AuthProvider>
+          <Toaster position="top-right" toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#333',
+              color: '#fff',
+            },
+          }} />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

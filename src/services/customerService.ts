@@ -1,137 +1,105 @@
- 
-import { api } from './api';
+ import { betterApiClient } from './betterApiClient';
+import { Customer, PaginatedResponse } from '@/types/customer';
+import { Order } from '@/types/order';
+import { Review } from '@/types/review';
 
- const CUSTOMERS_ENDPOINT = '/customer';
+const CUSTOMERS_ENDPOINT = '/customer';
+const ORDERS_ENDPOINT = '/orders';
+const REVIEWS_ENDPOINT = '/reviews';
 
-// Interfaces pour les données clients
-export interface Customer {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  profilePicture?: string;
-  createdAt: string;
-  updatedAt?: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'BLOCKED';
-  isConnected: boolean;
-  totalOrders: number;
-  lastOrderDate?: string;
-}
-
-// Interface pour les paramètres de requête
-export interface CustomerQueryParams {
+// Types pour les paramètres de recherche
+export interface CustomerSearchParams {
   page?: number;
   limit?: number;
-  status?: 'ACTIVE' | 'INACTIVE' | 'BLOCKED';
   search?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  status?: string;
+  sort?: string;
 }
 
-// Interface pour la réponse paginée
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    totalItems: number;
-    itemCount: number;
-    itemsPerPage: number;
-    totalPages: number;
-    currentPage: number;
-  };
-}
-
-/**
- * Récupère tous les clients avec pagination et filtres
- * @param params Paramètres de requête (pagination, filtres, recherche)
- */
-export const getCustomers = async (params: CustomerQueryParams = {}): Promise<PaginatedResponse<Customer>> => {
-  // Construire la chaîne de requête à partir des paramètres
+// Fonction pour construire les paramètres de requête
+function buildQueryParams(params: CustomerSearchParams): string {
   const queryParams = new URLSearchParams();
   
-  // Ajouter les paramètres s'ils sont définis
-  if (params.page !== undefined) queryParams.append('page', params.page.toString());
-  if (params.limit !== undefined) queryParams.append('limit', params.limit.toString());
-  if (params.status) queryParams.append('status', params.status);
+  if (params.page) queryParams.append('page', params.page.toString());
+  if (params.limit) queryParams.append('limit', params.limit.toString());
   if (params.search) queryParams.append('search', params.search);
-  if (params.sortBy) queryParams.append('sortBy', params.sortBy);
-  if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+  if (params.status) queryParams.append('status', params.status);
+  if (params.sort) queryParams.append('sort', params.sort);
   
-  // Construire l'URL avec les paramètres
-  const endpoint = `${CUSTOMERS_ENDPOINT}?${queryParams.toString()}`;
-  
-  return api.get<PaginatedResponse<Customer>>(endpoint, true);
-};
+  return queryParams.toString();
+}
 
-/**
- * Récupère un client par son ID
- * @param id ID du client
- */
-export const getCustomerById = async (id: string): Promise<Customer> => {
-  return api.get<Customer>(`${CUSTOMERS_ENDPOINT}/${id}`, true);
-};
+// Obtenir la liste des clients avec pagination
+export async function getCustomers(params: CustomerSearchParams = {}): Promise<PaginatedResponse<Customer>> {
+  try {
+    const queryParams = { ...params };
+    if (!queryParams.status) {
+      queryParams.status = 'NEW';
+    }
+    
+    return await betterApiClient.get<PaginatedResponse<Customer>>(`${CUSTOMERS_ENDPOINT}?${buildQueryParams(queryParams)}`);
+  } catch (error) {
+    console.error('[API] Erreur lors de la récupération des clients:', error);
+    throw error;
+  }
+}
 
-/**
- * Récupère les commandes d'un client
- * @param id ID du client
- * @param params Paramètres de pagination
- */
-export const getCustomerOrders = async (
-  id: string, 
-  params: { page?: number; limit?: number } = {}
-) => {
-  const queryParams = new URLSearchParams();
-  
-  if (params.page !== undefined) queryParams.append('page', params.page.toString());
-  if (params.limit !== undefined) queryParams.append('limit', params.limit.toString());
-  
-  const endpoint = `${CUSTOMERS_ENDPOINT}/${id}/orders?${queryParams.toString()}`;
-  
-  return api.get(endpoint, true);
-};
+// Obtenir un client par son ID
+export async function getCustomerById(id: string): Promise<Customer> {
+  try {
+    return await betterApiClient.get<Customer>(`${CUSTOMERS_ENDPOINT}/${id}`);
+  } catch (error) {
+    console.error(`[API] Erreur lors de la récupération du client ${id}:`, error);
+    throw error;
+  }
+}
 
-/**
- * Récupère les avis d'un client
- * @param id ID du client
- * @param params Paramètres de pagination
- */
-export const getCustomerReviews = async (
-  id: string, 
-  params: { page?: number; limit?: number } = {}
-) => {
-  const queryParams = new URLSearchParams();
-  
-  if (params.page !== undefined) queryParams.append('page', params.page.toString());
-  if (params.limit !== undefined) queryParams.append('limit', params.limit.toString());
-  
-  const endpoint = `${CUSTOMERS_ENDPOINT}/${id}/reviews?${queryParams.toString()}`;
-  
-  return api.get(endpoint, true);
-};
+// Mettre à jour le statut d'un client
+export async function updateCustomerStatus(id: string, status: string): Promise<Customer> {
+  try {
+    return await betterApiClient.patch<Customer>(`${CUSTOMERS_ENDPOINT}/${id}/status`, { status });
+  } catch (error) {
+    console.error(`[API] Erreur lors de la mise à jour du statut du client ${id}:`, error);
+    throw error;
+  }
+}
 
-/**
- * Met à jour le statut d'un client
- * @param id ID du client
- * @param status Nouveau statut
- */
-export const updateCustomerStatus = async (id: string, status: 'ACTIVE' | 'INACTIVE' | 'BLOCKED'): Promise<Customer> => {
-  return api.patch<Customer>(`${CUSTOMERS_ENDPOINT}/${id}/status`, { status }, true);
-};
+// Supprimer un client
+export async function deleteCustomer(id: string): Promise<void> {
+  try {
+    await betterApiClient.delete(`${CUSTOMERS_ENDPOINT}/${id}`);
+  } catch (error) {
+    console.error(`[API] Erreur lors de la suppression du client ${id}:`, error);
+    throw error;
+  }
+}
 
-/**
- * Met à jour les informations d'un client
- * @param id ID du client
- * @param data Données à mettre à jour
- */
-export const updateCustomer = async (id: string, data: Partial<Customer>): Promise<Customer> => {
-  return api.patch<Customer>(`${CUSTOMERS_ENDPOINT}/${id}`, data, true);
-};
+// Mettre à jour les informations d'un client
+export async function updateCustomer(id: string, data: Partial<Customer>): Promise<Customer> {
+  try {
+    return await betterApiClient.patch<Customer>(`${CUSTOMERS_ENDPOINT}/${id}`, data);
+  } catch (error) {
+    console.error(`[API] Erreur lors de la mise à jour du client ${id}:`, error);
+    throw error;
+  }
+}
 
-/**
- * Supprime un client
- * @param id ID du client
- */
-export const deleteCustomer = async (id: string): Promise<void> => {
-  return api.delete<void>(`${CUSTOMERS_ENDPOINT}/${id}`, true);
-};
+// Obtenir les commandes d'un client
+export async function getCustomerOrders(id: string, params: CustomerSearchParams = {}): Promise<PaginatedResponse<Order>> {
+  try {
+    return await betterApiClient.get<PaginatedResponse<Order>>(`${CUSTOMERS_ENDPOINT}/${id}/orders?${buildQueryParams(params)}`);
+  } catch (error) {
+    console.error(`[API] Erreur lors de la récupération des commandes du client ${id}:`, error);
+    throw error;
+  }
+}
+
+// Obtenir les avis d'un client
+export async function getCustomerReviews(id: string, params: CustomerSearchParams = {}): Promise<PaginatedResponse<Review>> {
+  try {
+    return await betterApiClient.get<PaginatedResponse<Review>>(`${CUSTOMERS_ENDPOINT}/${id}/reviews?${buildQueryParams(params)}`);
+  } catch (error) {
+    console.error(`[API] Erreur lors de la récupération des avis du client ${id}:`, error);
+    throw error;
+  }
+}

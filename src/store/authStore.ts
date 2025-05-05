@@ -67,6 +67,8 @@ export const useAuthStore = create<AuthStore>()(
             isLoading: false,
           });
           
+          console.log('TOKEN:', accessToken);
+          
           console.log('Auth state after login:', get());
         } catch (error) {
           console.error('Login error in store:', error);
@@ -94,16 +96,74 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       refreshAccessToken: async () => {
-        const currentRefreshToken = get().refreshToken;
-        if (!currentRefreshToken) return false;
+        const expiredToken = get().accessToken;
+        const refreshToken = get().refreshToken;
+        if (!refreshToken) {
+          console.error('Aucun refresh token disponible dans le store');
+          return false;
+        }
 
         try {
-           const data = await apiRefreshToken(currentRefreshToken);
-           const accessToken = data.token || data.accessToken;
-          set({ accessToken });
+          console.log('Tentative de rafraichissement du token depuis le store...');
+          console.log('Refresh token utilisé:', refreshToken);
+          
+          // Utilise directement le refresh token pour obtenir un nouveau token
+          const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+          const API_PREFIX = '/api/v1';
+          
+          const refreshResp = await fetch(`${API_BASE_URL}${API_PREFIX}/auth/refresh-token`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${refreshToken}` },
+          });
+          
+          console.debug('[AUTH] Status de la réponse refresh:', refreshResp.status);
+          
+          if (!refreshResp.ok) {
+            console.error('[AUTH] Refresh échoué, statut:', refreshResp.status);
+            return false;
+          }
+          
+          // Récupère le nouveau token
+          const refreshData = await refreshResp.json();
+          console.debug('[AUTH] Données reçues du refresh:', refreshData);
+          
+          let newToken = refreshData.accessToken || refreshData.token;
+          if (!newToken) {
+            console.error('[AUTH] Pas de nouveau token dans la réponse');
+            return false;
+          }
+          
+          // Vérifie si le token a le champ "type"
+          try {
+            const [header, payload, signature] = newToken.split('.');
+            const decodedPayload = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+            console.debug('[AUTH] Payload du nouveau token:', decodedPayload);
+            
+            // Forcer le type à USER si non présent ou non reconnu
+            if (!decodedPayload.type) {
+              console.debug('[AUTH] Token sans type détecté, ajout du type USER');
+              
+              decodedPayload.type = 'USER';
+              
+              const modifiedPayload = btoa(JSON.stringify(decodedPayload))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+              
+              newToken = `${header}.${modifiedPayload}.${signature}`;
+              console.debug('[AUTH] Token modifié avec type ajouté:', newToken);
+            }
+          } catch (e) {
+            console.error('[AUTH] Erreur lors de la vérification/modification du token:', e);
+          }
+          
+          console.log('Token rafraîchi avec succès, mise à jour du store');
+          set({ 
+            accessToken: newToken,
+          });
           return true;
         } catch (error) {
-           await get().logout();
+          console.error('Erreur lors du rafraîchissement du token depuis le store:', error);
           return false;
         }
       },

@@ -1,6 +1,4 @@
-
-
-import { api } from './api';
+import { betterApiClient } from './betterApiClient';
 
  
 const DISHES_ENDPOINT = '/dishes';
@@ -42,7 +40,7 @@ export interface UpdateProductDto {
 
  
 export const getAllProducts = async (): Promise<Product[]> => {
-  return api.get<Product[]>(DISHES_ENDPOINT, false);  
+  return betterApiClient.get<Product[]>(DISHES_ENDPOINT);
 };
 
  
@@ -53,24 +51,24 @@ export const getProductsByCategory = async (categoryId: string): Promise<Product
 
  
 export const getProductById = async (id: string): Promise<Product> => {
-  return api.get<Product>(`${DISHES_ENDPOINT}/${id}`, false); 
+  return betterApiClient.get<Product>(`${DISHES_ENDPOINT}/${id}`); 
 };
  
 export const createProduct = async (product: CreateProductDto): Promise<Product> => {
-  return api.post<Product>(DISHES_ENDPOINT, product, true);  
+  return betterApiClient.post<Product>(DISHES_ENDPOINT, product);
 };
 
  
 export const updateProduct = async (id: string, product: UpdateProductDto): Promise<Product> => {
-  return api.patch<Product>(`${DISHES_ENDPOINT}/${id}`, product, true); 
+  return betterApiClient.patch<Product>(`${DISHES_ENDPOINT}/${id}`, product); 
 };
 
  
 export const deleteProduct = async (id: string): Promise<void> => {
-  return api.delete<void>(`${DISHES_ENDPOINT}/${id}`, true);  
+  return betterApiClient.delete<void>(`${DISHES_ENDPOINT}/${id}`);
 };
  
 export const updateProductStock = async (id: string, quantity: number): Promise<Product> => {
   
-  return api.patch<Product>(`${DISHES_ENDPOINT}/${id}`, { stock: quantity }, true); 
+  return betterApiClient.patch<Product>(`${DISHES_ENDPOINT}/${id}`, { stock: quantity }); 
 };

@@ -1,70 +1,47 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { ClientRow } from './ClientRow'
 import { Pagination } from '@/components/ui/pagination'
 import { TableHeader } from './TableHeader'
-import { users } from '@/data/MockedData'
-import { type User } from '@/types'
 import React from 'react'
+import { useCustomerStore } from '@/store/customerStore'
+import { Customer } from '@/services/customerService'
 
-export interface Client extends User {
-  totalOrders: number
-  lastOrderDate: string
-}
-
-const generateClients = (): Client[] => {
-  return users.slice(0, 24).map((user) => ({
-    ...user,
-    totalOrders: Math.floor(Math.random() * 50),
-    lastOrderDate: new Date(Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }))
-}
+// Adapter l'interface Client pour qu'elle soit compatible avec les données de l'API
+export type Client = Customer;
 
 interface ClientsTableProps {
   selectedClientId?: string | null;
   onClientClick: (clientId: string) => void;
   onClientDoubleClick: (clientId: string) => void; 
   connectedOnly?: boolean;
+  isLoading?: boolean;
 }
 
 export function ClientsTable({ 
   selectedClientId, 
   onClientClick,
   onClientDoubleClick,
-  connectedOnly = false 
+  connectedOnly = false,
+  isLoading = false
 }: ClientsTableProps) {
-  const [currentPage, setCurrentPage] = useState(1)
   const [selectedClients, setSelectedClients] = useState<string[]>([])
   
-  const clients = useMemo(() => generateClients(), [])
+  // Utiliser le store client
+  const { 
+    customers, 
+    fetchCustomers, 
+    pagination, 
+    setCurrentPage 
+  } = useCustomerStore();
 
-  // Filtrer les clients si nécessaire
-  const filteredClients = useMemo(() => {
-    if (connectedOnly) {
-      return clients.filter(client => client.isConnected);
-    }
-    return clients;
-  }, [clients, connectedOnly]);
-
-  const itemsPerPage = 8
-  const totalPages = Math.ceil(filteredClients.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const currentClients = filteredClients.slice(startIndex, endIndex)
-
+  // Charger les clients lorsque le filtre change
+  useEffect(() => {
+    fetchCustomers();
+  }, [connectedOnly, fetchCustomers]);
   
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [connectedOnly]);
-
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedClients(currentClients.map(client => client.id))
+      setSelectedClients(customers.map(client => client.id))
     } else {
       setSelectedClients([])
     }
@@ -79,17 +56,18 @@ export function ClientsTable({
   }
 
   const handleClientClick = (clientId: string) => {
-    console.log("Clicked on client with ID:", clientId);
+  
     
     if (clientId) {
       onClientClick(clientId);
     } else {
       console.error("Client ID is undefined or null");
     }
+   
   };
 
   const handleClientDoubleClick = (clientId: string) => {
-    console.log("Double-clicked on client with ID:", clientId);
+  
     
     if (clientId) {
       onClientDoubleClick(clientId);
@@ -98,34 +76,51 @@ export function ClientsTable({
     }
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   return (
     <div className="min-w-full bg-white">
       <div className="overflow-hidden">
-        <table className="min-w-full divide-y border-1 border-slate-200 rounded-xl divide-gray-200">
-          <TableHeader 
-            onSelectAll={handleSelectAll}
-            isAllSelected={selectedClients.length === currentClients.length}
-          />
-          <tbody className="divide-y divide-gray-200">
-            {currentClients.map((client) => (
-              <ClientRow 
-                key={client.id}
-                client={client}
-                isSelected={selectedClients.includes(client.id)}
-                onSelect={(clientId, checked) => handleSelectClient(clientId, checked)}
-                onClick={() => handleClientClick(client.id)}
-                onDoubleClick={() => handleClientDoubleClick(client.id)}
-                isHighlighted={selectedClientId === client.id}
-              />
-            ))}
-          </tbody>
-        </table>
+        {isLoading ? (
+          <div className="flex justify-center items-center p-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <table className="min-w-full divide-y border-1 border-slate-200 rounded-xl divide-gray-200">
+            <TableHeader 
+              onSelectAll={handleSelectAll}
+              isAllSelected={selectedClients.length === customers.length && customers.length > 0}
+            />
+            <tbody className="divide-y divide-gray-200">
+              {customers.map((client) => (
+                <ClientRow 
+                  key={client.id}
+                  client={client}
+                  isSelected={selectedClients.includes(client.id)}
+                  onSelect={(clientId, checked) => handleSelectClient(clientId, checked)}
+                  onClick={() => handleClientClick(client.id)}
+                  onDoubleClick={() => handleClientDoubleClick(client.id)}
+                  isHighlighted={selectedClientId === client.id}
+                />
+              ))}
+              {customers.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                    Aucun client trouvé
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
       <div className="flex justify-center py-4 px-2 border-t border-gray-200">
         <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          onPageChange={handlePageChange}
         />
       </div>
     </div>

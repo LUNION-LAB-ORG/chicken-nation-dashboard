@@ -373,7 +373,7 @@ const Menus = () => {
               onEditMenu={handleEditMenu}
               onViewMenu={handleViewMenu}
             />
-            
+             
             <MenuCategories 
               categories={menuCategories}
               menuItems={menuItems}

@@ -1,4 +1,15 @@
 interface Client {
+  id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string;
+  addresses?: any[];
+  image?: string | null;
+  created_at: string;
+  updated_at: string;
+  entity_status: 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'NEW';
+  birth_day?: string | null;
   orderHistory: Array<{
     id: string;
     date: string;
@@ -6,6 +17,7 @@ interface Client {
     paymentMethod: string;
     status: string;
   }>;
+  [key: string]: any;
 }
 
 interface OrdersTabProps {
