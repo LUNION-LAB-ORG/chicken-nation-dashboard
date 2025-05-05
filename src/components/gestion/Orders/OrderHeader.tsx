@@ -24,7 +24,7 @@ function OrderHeader({ currentView = 'list', onBack, onCreateMenu }: OrderHeader
         actions={[
          
           {
-            label: "Créer un menu",
+            label: "Créer une commande",
             onClick: onCreateMenu,
           
           },
@@ -44,9 +44,9 @@ function OrderHeader({ currentView = 'list', onBack, onCreateMenu }: OrderHeader
       onBack={onBack}
       title={
         currentView === 'create' 
-          ? 'Créer un menu' 
+          ? 'Créer une commande' 
           : currentView === 'edit' 
-            ? 'Modifier le menu' 
+            ? 'Modifier la commande' 
             : 'Détails '
       }
       gradient={true}
