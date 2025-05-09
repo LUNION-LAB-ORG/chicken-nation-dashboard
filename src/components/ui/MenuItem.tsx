@@ -25,7 +25,8 @@ export default function MenuItem({ menu, onEdit, onView }: MenuItemProps) {
         <Image
           src={imageSrc}          
           alt={menu.name}
-          className="w-full max-w-[200px] sm:max-w-[220px] lg:max-w-[250px] h-[100px] sm:h-[120px] lg:h-[140px] object-cover rounded-xl border border-orange-200 hover:border-orange-400 transition-colors"
+          className="w-full max-w-[200px] sm:max-w-[220px]
+           lg:max-w-[250px] h-[100px] sm:h-[120px] lg:h-[140px] object-cover rounded-xl border border-orange-200 hover:border-orange-400 transition-colors"
           width={250}
           height={150}
           priority
@@ -45,7 +46,7 @@ export default function MenuItem({ menu, onEdit, onView }: MenuItemProps) {
       </div>
       <button 
         onClick={() => onEdit?.(menu)}
-        className="mt-auto w-full sm:w-32 lg:w-36 py-1 sm:py-1.5 lg:py-2 px-2 bg-[#F17922] text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-[#f17522] transition-colors cursor-pointer"
+        className="mt-auto w-full sm:w-32 lg:w-36 py-1 sm:py-1.5 lg:py-1.5 px-2 bg-[#F17922] text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-[#f17522] transition-colors cursor-pointer"
       >
         Modifier le plat
       </button>

@@ -53,7 +53,9 @@ export function OrdersTab({ client, formatDate }: OrdersTabProps) {
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-3 py-4 sm:px-6 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900">#{order.id}</td>
                     <td className="px-3 py-4 sm:px-6 whitespace-nowrap text-xs sm:text-sm text-gray-500">{formatDate(order.date)}</td>
-                    <td className="px-3 py-4 sm:px-6 whitespace-nowrap text-xs sm:text-sm text-gray-500">{order.total} XOF</td>
+                    <td className="px-3 py-4 sm:px-6 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                      {(order.total || 0).toLocaleString('fr-FR')} F
+                    </td>
                     <td className="px-3 py-4 sm:px-6 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                       {order.paymentMethod === 'card' ? 'Carte' : 
                        order.paymentMethod === 'mobile_money' ? 'Mobile Money' : 
@@ -64,11 +66,15 @@ export function OrdersTab({ client, formatDate }: OrdersTabProps) {
                         order.status === 'delivered' ? 'bg-[#4FCBBA] text-white' :
                         order.status === 'pending' ? 'bg-[#FBD2B5] text-slate-600' :
                         order.status === 'cancelled' ? 'bg-black text-[#FDE9DA]' :
+                        order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                        order.status === 'completed' ? 'bg-green-100 text-green-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
-                        {order.status === 'delivered' ? 'En cours' :
-                         order.status === 'pending' ? 'Confirmé' :
+                        {order.status === 'delivered' ? 'Livré' :
+                         order.status === 'pending' ? 'En attente' :
                          order.status === 'cancelled' ? 'Annulé' :
+                         order.status === 'processing' ? 'En préparation' :
+                         order.status === 'completed' ? 'Terminé' :
                          order.status}
                       </span>
                     </td>
@@ -98,11 +104,15 @@ export function OrdersTab({ client, formatDate }: OrdersTabProps) {
                     order.status === 'delivered' ? 'bg-[#4FCBBA] text-white' :
                     order.status === 'pending' ? 'bg-[#FBD2B5] text-slate-600' :
                     order.status === 'cancelled' ? 'bg-black text-[#FDE9DA]' :
+                    order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                    order.status === 'completed' ? 'bg-green-100 text-green-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
-                    {order.status === 'delivered' ? 'En cours' :
-                     order.status === 'pending' ? 'Confirmé' :
+                    {order.status === 'delivered' ? 'Livré' :
+                     order.status === 'pending' ? 'En attente' :
                      order.status === 'cancelled' ? 'Annulé' :
+                     order.status === 'processing' ? 'En préparation' :
+                     order.status === 'completed' ? 'Terminé' :
                      order.status}
                   </span>
                 </div>
@@ -114,7 +124,9 @@ export function OrdersTab({ client, formatDate }: OrdersTabProps) {
                   </div>
                   <div>
                     <p className="text-gray-500 mb-1">Montant</p>
-                    <p className="font-medium">{order.total} XOF</p>
+                    <p className="font-medium">
+                      {(order.total || 0).toLocaleString('fr-FR')} F
+                    </p>
                   </div>
                   <div>
                     <p className="text-gray-500 mb-1">Paiement</p>

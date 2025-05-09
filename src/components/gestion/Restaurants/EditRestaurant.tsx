@@ -9,6 +9,7 @@ import ScheduleSelector from './ScheduleSelector'
 import { ImageIcon, Loader2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { updateRestaurant, getRestaurantById, Restaurant, Schedule } from '@/services/restaurantService'
+import RestaurantMap from './RestaurantMap'
 
 interface EditRestaurantProps {
   restaurantId: string;
@@ -94,35 +95,41 @@ export default function EditRestaurant({ restaurantId, onCancel, onSuccess }: Ed
     setIsSubmitting(true);
     
     try {
-       const formData = new FormData();
+      const formData = new FormData();
       
-       const form = e.target as HTMLFormElement;
+      const form = e.target as HTMLFormElement;
       const name = (form.querySelector('[name="name"]') as HTMLInputElement)?.value;
       const description = (form.querySelector('[name="description"]') as HTMLTextAreaElement)?.value;
       const address = (form.querySelector('[name="address"]') as HTMLInputElement)?.value;
-      const latitude = (form.querySelector('[name="latitude"]') as HTMLInputElement)?.value;
-      const longitude = (form.querySelector('[name="longitude"]') as HTMLInputElement)?.value;
+      const latitude = parseFloat((form.querySelector('[name="latitude"]') as HTMLInputElement)?.value || '0');
+      const longitude = parseFloat((form.querySelector('[name="longitude"]') as HTMLInputElement)?.value || '0');
       const phone = (form.querySelector('[name="phone"]') as HTMLInputElement)?.value;
       const email = (form.querySelector('[name="email"]') as HTMLInputElement)?.value;
       const active = (form.querySelector('[name="active"]') as HTMLInputElement)?.checked;
+      
+      // Validation des coordonnées
+      if (isNaN(latitude) || isNaN(longitude)) {
+        toast.error('Les coordonnées GPS sont invalides');
+        setIsSubmitting(false);
+        return;
+      }
       
       // Ajouter tous les champs au FormData
       formData.append('name', name);
       formData.append('description', description);
       formData.append('address', address);
-      formData.append('latitude', latitude);
-      formData.append('longitude', longitude);
+      formData.append('latitude', latitude.toString());
+      formData.append('longitude', longitude.toString());
       formData.append('phone', phone);
       formData.append('email', email);
       formData.append('active', active ? 'true' : 'false');
       
- 
       if (imageFile) {
         formData.append('image', imageFile);
       }
       
-       formData.append('schedule', JSON.stringify(schedule));
-       
+      formData.append('schedule', JSON.stringify(schedule));
+      
       const result = await updateRestaurant(restaurantId, formData);
       
       toast.success('Restaurant mis à jour avec succès');
@@ -198,7 +205,7 @@ export default function EditRestaurant({ restaurantId, onCancel, onSuccess }: Ed
                   />
                 </div>
                 
-                {/* Adresse */}
+                {/* Adresse
                 <div>
                   <label className="block text-sm text-[#595959] font-light mb-2">
                     Adresse*
@@ -212,38 +219,36 @@ export default function EditRestaurant({ restaurantId, onCancel, onSuccess }: Ed
                     className={`w-full h-[42px] rounded-xl bg-white border ${formErrors.address ? 'border-red-500' : 'border-[#D8D8D8]'} px-4 text-[13px] placeholder-gray-400`}
                   />
                   {formErrors.address && <p className="text-red-500 text-xs mt-1">{formErrors.address}</p>}
-                </div>
+                </div> */}
                 
-                {/* Coordonnées géographiques */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm text-[#595959] font-light mb-2">
-                      Latitude
-                    </label>
-                    <Input
-                      name="latitude"
-                      type="number"
-                      step="any"
-                      defaultValue={restaurant.latitude}
-                      placeholder="Latitude"
-                      className={`w-full h-[42px] rounded-xl bg-white border ${formErrors.latitude ? 'border-red-500' : 'border-[#D8D8D8]'} px-4 text-[13px] placeholder-gray-400`}
-                    />
-                    {formErrors.latitude && <p className="text-red-500 text-xs mt-1">{formErrors.latitude}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm text-[#595959] font-light mb-2">
-                      Longitude
-                    </label>
-                    <Input
-                      name="longitude"
-                      type="number"
-                      step="any"
-                      defaultValue={restaurant.longitude}
-                      placeholder="Longitude"
-                      className={`w-full h-[42px] rounded-xl bg-white border ${formErrors.longitude ? 'border-red-500' : 'border-[#D8D8D8]'} px-4 text-[13px] placeholder-gray-400`}
-                    />
-                    {formErrors.longitude && <p className="text-red-500 text-xs mt-1">{formErrors.longitude}</p>}
-                  </div>
+                {/* Carte */}
+                <div>
+                  <label className="block text-sm text-[#595959] font-light mb-2">
+                    Localisation
+                  </label>
+                  <RestaurantMap
+                    initialLat={restaurant.latitude}
+                    initialLng={restaurant.longitude}
+                    onLocationChange={(lat, lng, address) => {
+                      // Mettre à jour le champ d'adresse
+                      const addressInput = document.querySelector('[name="address"]') as HTMLInputElement;
+                      if (addressInput) {
+                        addressInput.value = address;
+                      }
+                      
+                      // Mettre à jour les champs de latitude et longitude
+                      const latInput = document.querySelector('[name="latitude"]') as HTMLInputElement;
+                      const lngInput = document.querySelector('[name="longitude"]') as HTMLInputElement;
+                      if (latInput && lngInput) {
+                        latInput.value = lat.toString();
+                        lngInput.value = lng.toString();
+                      }
+                    }}
+                  />
+                  
+                  {/* Champs cachés pour les coordonnées */}
+                  <input type="hidden" name="latitude" value={restaurant.latitude} />
+                  <input type="hidden" name="longitude" value={restaurant.longitude} />
                 </div>
                 
                 {/* Contact */}
@@ -319,7 +324,7 @@ export default function EditRestaurant({ restaurantId, onCancel, onSuccess }: Ed
                       src={imagePreview} 
                       alt="Aperçu du restaurant"
                       fill
-                      className="object-cover"
+                      className="object-contain"
                     />
                   </div>
                 ) : (

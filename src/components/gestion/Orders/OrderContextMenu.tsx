@@ -56,7 +56,9 @@ const OrderContextMenu: React.FC<OrderContextMenuProps> = ({
  
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (isOpen && !(event.target as Element).closest('.order-context-menu')) {
+      // Vérifier si le clic est en dehors du menu et du bouton qui l'ouvre
+      if (isOpen && !(event.target as Element).closest('.order-context-menu') && 
+          !(event.target as Element).closest('.menu-button')) {
         onClose();
       }
     };
@@ -69,8 +71,7 @@ const OrderContextMenu: React.FC<OrderContextMenuProps> = ({
 
   return (
     <div 
-      className="order-context-menu absolute z-50 right-0 mt-1 w-56 bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200"
-      style={{ top: '100%' }}
+      className="order-context-menu w-56 bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200"
     >
       {!isAccepted ? (
         <div className="py-1">

@@ -1,6 +1,4 @@
 import { API_URL } from '@/config';
-import { fetchWithAuth } from '@/utils/authUtils';
-import { formatImageUrl } from '@/utils/imageHelpers';
 
  
 export interface Supplement {
@@ -15,8 +13,11 @@ export interface Supplement {
 
  export const getSupplementsByCategory = async (category: string): Promise<Supplement[]> => {
   try {
-    // Utiliser fetchWithAuth pour garantir l'authentification
-    return await fetchWithAuth<Supplement[]>(`${API_URL}/api/v1/supplements?category=${category}`);
+    const response = await fetch(`${API_URL}/api/v1/supplements?category=${category}`);
+    if (!response.ok) {
+      throw new Error(`Erreur: ${response.status}`);
+    }
+    return await response.json();
   } catch (error) {
     console.error(`Erreur lors de la récupération des suppléments de catégorie ${category}:`, error);
     throw error;
@@ -25,8 +26,11 @@ export interface Supplement {
 
  export const getAllSupplements = async (): Promise<Record<string, Supplement[]>> => {
   try {
-    // Utiliser fetchWithAuth pour garantir l'authentification
-    return await fetchWithAuth<Record<string, Supplement[]>>(`${API_URL}/api/v1/supplements`);
+    const response = await fetch(`${API_URL}/api/v1/supplements`);
+    if (!response.ok) {
+      throw new Error(`Erreur: ${response.status}`);
+    }
+    return await response.json();
   } catch (error) {
     console.error('Erreur lors de la récupération des suppléments:', error);
     throw error;
@@ -38,7 +42,12 @@ export interface Supplement {
     value: supplement.id,
     label: supplement.name,
     price: `${supplement.price} XOF`,
-    image: formatImageUrl(supplement.image),
-    category: supplement.category
+    image: supplement.image ? 
+      (supplement.image.startsWith('http') || supplement.image.startsWith('/') 
+        ? supplement.image 
+        : `https://chicken.turbodeliveryapp.com/${supplement.image}`)
+      : '/images/plat.png',
+    category: supplement.category,
+    available: supplement.available
   }));
 };

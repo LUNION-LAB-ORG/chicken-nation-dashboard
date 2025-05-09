@@ -35,8 +35,8 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
     title: initialData?.name || '',
     description: initialData?.description || '',
     price: initialData?.price || '',
-    reducedPrice: initialData?.discountedPrice || '',
-    reduction: initialData?.isPromotion || false,
+    reducedPrice: initialData?.promotion_price || '',
+    reduction: initialData?.is_promotion || false,
     category: initialData?.categoryId ? [initialData.categoryId] : [],
     restaurant: typeof initialData?.restaurantId === 'string' ? initialData.restaurantId : '',
     supplements: {
@@ -208,60 +208,35 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
       try {
         const data = await getAllSupplements();
         
-        // Créer un objet pour stocker les options par type
-        const optionsByType = {
-          [SupplementType.ACCESSORY]: [],
-          [SupplementType.FOOD]: [],
-          [SupplementType.DRINK]: [],
-          [SupplementType.OTHER]: []
-        };
-        
-        // Traiter les suppléments par type
+        // Initialiser les options pour chaque type de supplément
         if (data.ACCESSORY) {
-          const options = convertSupplementsToOptions(data.ACCESSORY);
-          setIngredientOptions(options);
-          optionsByType[SupplementType.ACCESSORY] = options.map(option => ({
-            ...option,
-            type: SupplementType.ACCESSORY
-          }));
-          
+          setIngredientOptions(convertSupplementsToOptions(data.ACCESSORY));
         }
         
         if (data.FOOD) {
-          const options = convertSupplementsToOptions(data.FOOD);
-          setAccompagnementOptions(options);
-          optionsByType[SupplementType.FOOD] = options.map(option => ({
-            ...option,
-            type: SupplementType.FOOD
-          }));
-          
+          setAccompagnementOptions(convertSupplementsToOptions(data.FOOD));
         }
         
         if (data.DRINK) {
-          const options = convertSupplementsToOptions(data.DRINK);
-          setBoissonOptions(options);
-          optionsByType[SupplementType.DRINK] = options.map(option => ({
-            ...option,
-            type: SupplementType.DRINK
-          }));
-          console.log("📋 Options de boissons:", options);
+          setBoissonOptions(convertSupplementsToOptions(data.DRINK));
         }
-        
-        // Mettre à jour les options génériques
-        setSupplementOptions(optionsByType);
-        
-        console.log("🔄 Mise à jour des options de suppléments terminée");
-        
-        // Initialiser les suppléments sélectionnés si disponibles
-        if (initialData?.dish_supplements && initialData.dish_supplements.length > 0) {
-         
-          // Initialiser immédiatement sans setTimeout
-          initializeSupplements(initialData.dish_supplements);
-        } else {
-          console.log("⚠️ Aucun supplément à initialiser");
+
+        // Si c'est une création (pas d'initialData), réinitialiser les états
+        if (!initialData) {
+          setSelectedIngredients([]);
+          setIngredientQuantities({});
+          setSelectedAccompagnements([]);
+          setAccompagnementQuantities({});
+          setSelectedBoissons([]);
+          setBoissonQuantities({});
+        } else if (initialData.dish_supplements && initialData.dish_supplements.length > 0) {
+          // Si c'est une modification, initialiser avec les suppléments existants
+          setTimeout(() => {
+            initializeSupplements(initialData.dish_supplements);
+          }, 0);
         }
       } catch (error) {
-        console.error('❌ Erreur lors du chargement des suppléments:', error);
+        console.error('Erreur lors du chargement des suppléments:', error);
         toast.error('Impossible de charger les suppléments');
       } finally {
         setIsLoadingSupplements(false);
@@ -269,163 +244,141 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
     };
     
     fetchSupplements();
-  }, [initialData]);  
+  }, [initialData]);
 
-   const initializeSupplements = (dishSupplements: any[]) => {
-    console.log("🚀 Début de l'initialisation des suppléments");
-    
+  const initializeSupplements = (dishSupplements: any[]) => {
     if (!dishSupplements || !Array.isArray(dishSupplements) || dishSupplements.length === 0) {
-      console.warn("⚠️ Aucun supplément valide à initialiser");
       return;
     }
 
-    // Ingrédients (ACCESSORY)
+    // Initialisation des tableaux et objets pour stocker les données
     const ingredients: string[] = [];
     const ingredientsQty: Record<string, number> = {};
-
-    // Accompagnements (FOOD)
     const accompagnements: string[] = [];
     const accompagnementsQty: Record<string, number> = {};
-
-    // Boissons (DRINK)
     const boissons: string[] = [];
     const boissonsQty: Record<string, number> = {};
 
-    // Parcourir tous les suppléments du menu
-    dishSupplements.forEach((item, index) => {
-      console.log(`🔄 Traitement du supplément ${index}:`, item);
+    // Traitement de chaque supplément
+    dishSupplements.forEach((item) => {
+      const supplementId = item.supplement_id || (item.supplement?.id || '');
+      if (!supplementId) return;
+
+      const quantity = typeof item.quantity === 'number' ? item.quantity : 1;
+      let type = item.supplement?.category || item.supplement?.type || item.type;
       
-       let forceInitialize = true;
-      
-       const supplementId = 
-        (item.supplement && item.supplement.id) || 
-        item.supplement_id || 
-        (typeof item === 'string' ? item : null);
-      
-      if (!supplementId) {
-        console.warn(`⚠️ Supplément ${index} sans ID valide:`, item);
-        return;  
-      }
-      
-      // Déterminer la quantité
-      const quantity = item.quantity || 1;
-      console.log(`📊 Quantité: ${quantity}`);
-      
-      // Déterminer le type
-      let type = null;
-      
-      if (item.supplement && item.supplement.type) {
-        type = item.supplement.type;
-        
-      } else if (item.supplement && item.supplement.category) {
-        type = item.supplement.category;
-        
-      } else if (item.type) {
-        type = item.type;
-        
-      } else if (item.category) {
-        type = item.category;
-       
-      }
-      
-       if (!type && item.supplement && item.supplement.name) {
+      if (!type && item.supplement?.name) {
         const name = item.supplement.name.toLowerCase();
-        if (name.includes('fanta') || name.includes('coca') || name.includes('eau') || 
-            name.includes('jus') || name.includes('soda') || name.includes('boisson')) {
+        if (name.includes('boisson') || name.includes('drink') || name.includes('soda')) {
           type = 'DRINK';
-          console.log(`🔍 Type déduit du nom (boisson): ${type}`);
-        } else if (name.includes('frite') || name.includes('riz') || name.includes('salade') || 
-                 name.includes('accompagnement') || name.includes('garniture')) {
+        } else if (name.includes('frite') || name.includes('riz') || name.includes('accompagnement')) {
           type = 'FOOD';
-         
+        } else {
+          type = 'ACCESSORY';
         }
       }
-      
-      
-      if (forceInitialize) { 
-        // Ajouter aux ingrédients
-        ingredients.push(supplementId);
-        ingredientsQty[supplementId] = quantity;
-        
-        // Ajouter aux accompagnements
-        accompagnements.push(supplementId);
-        accompagnementsQty[supplementId] = quantity;
-        
-        // Ajouter aux boissons
-        boissons.push(supplementId);
-        boissonsQty[supplementId] = quantity;
-      }
- 
-      else if (type) {
-        if (type === 'ACCESSORY') {
+
+      switch (type) {
+        case 'ACCESSORY':
           ingredients.push(supplementId);
-          ingredientsQty[supplementId] = quantity; 
-        } 
-        else if (type === 'FOOD') {
+          ingredientsQty[supplementId] = quantity;
+          break;
+        case 'FOOD':
           accompagnements.push(supplementId);
           accompagnementsQty[supplementId] = quantity;
-        } 
-        else if (type === 'DRINK') {
+          break;
+        case 'DRINK':
           boissons.push(supplementId);
           boissonsQty[supplementId] = quantity;
-        } else {
-          
-          ingredients.push(supplementId);
-          ingredientsQty[supplementId] = quantity; 
-        }
+          break;
+        default:
+          if (ingredientOptions.some(opt => opt.value === supplementId)) {
+            ingredients.push(supplementId);
+            ingredientsQty[supplementId] = quantity;
+          } else if (accompagnementOptions.some(opt => opt.value === supplementId)) {
+            accompagnements.push(supplementId);
+            accompagnementsQty[supplementId] = quantity;
+          } else if (boissonOptions.some(opt => opt.value === supplementId)) {
+            boissons.push(supplementId);
+            boissonsQty[supplementId] = quantity;
+          }
       }
-      
-      else {
-        
-         if (ingredientOptions && ingredientOptions.length > 0 && ingredientOptions.some(opt => opt.value === supplementId)) {
-          ingredients.push(supplementId);
-          ingredientsQty[supplementId] = quantity;
-        }
-         else if (accompagnementOptions && accompagnementOptions.length > 0 && accompagnementOptions.some(opt => opt.value === supplementId)) {
-          accompagnements.push(supplementId);
-          accompagnementsQty[supplementId] = quantity;
-        }
-         else if (boissonOptions && boissonOptions.length > 0 && boissonOptions.some(opt => opt.value === supplementId)) {
-          boissons.push(supplementId);
-          boissonsQty[supplementId] = quantity; 
-        }
-         else {
-          ingredients.push(supplementId);
-          ingredientsQty[supplementId] = quantity;
-          
+    });
+
+    // Log unique avec toutes les données
+    console.log("=== ÉTAT DES SUPPLÉMENTS ===", {
+      donnéesReçues: dishSupplements,
+      optionsDisponibles: {
+        ingrédients: ingredientOptions,
+        accompagnements: accompagnementOptions,
+        boissons: boissonOptions
+      },
+      supplémentsInitialisés: {
+        ingrédients: {
+          ids: ingredients,
+          quantités: ingredientsQty
+        },
+        accompagnements: {
+          ids: accompagnements,
+          quantités: accompagnementsQty
+        },
+        boissons: {
+          ids: boissons,
+          quantités: boissonsQty
         }
       }
     });
 
-   
+    // Mise à jour des états
     setSelectedIngredients(ingredients);
     setIngredientQuantities(ingredientsQty);
-
     setSelectedAccompagnements(accompagnements);
     setAccompagnementQuantities(accompagnementsQty);
-
     setSelectedBoissons(boissons);
     setBoissonQuantities(boissonsQty);
-     
   };
 
-  
+  // Mettre à jour les gestionnaires de changement pour maintenir les quantités
   const handleIngredientChange = (selectedIds: string[]) => {
- 
     const limitedSelection = selectedIds.slice(0, 3);
     setSelectedIngredients(limitedSelection);
+    
+    // Mettre à jour les quantités pour les nouveaux ingrédients
+    const newQuantities = { ...ingredientQuantities };
+    limitedSelection.forEach(id => {
+      if (!newQuantities[id]) {
+        newQuantities[id] = 1;
+      }
+    });
+    setIngredientQuantities(newQuantities);
   };
- 
+
   const handleAccompagnementChange = (selectedIds: string[]) => {
-  
     const limitedSelection = selectedIds.slice(0, 3);
     setSelectedAccompagnements(limitedSelection);
+    
+    // Mettre à jour les quantités pour les nouveaux accompagnements
+    const newQuantities = { ...accompagnementQuantities };
+    limitedSelection.forEach(id => {
+      if (!newQuantities[id]) {
+        newQuantities[id] = 1;
+      }
+    });
+    setAccompagnementQuantities(newQuantities);
   };
- 
+
   const handleBoissonChange = (selectedIds: string[]) => {
- 
     const limitedSelection = selectedIds.slice(0, 3);
     setSelectedBoissons(limitedSelection);
+    
+    // Mettre à jour les quantités pour les nouvelles boissons
+    const newQuantities = { ...boissonQuantities };
+    limitedSelection.forEach(id => {
+      if (!newQuantities[id]) {
+        newQuantities[id] = 1;
+      }
+    });
+    setBoissonQuantities(newQuantities);
   };
 
   const handleSupplementCategoryChange = (type: keyof typeof formData.supplements, value: string) => {
@@ -476,44 +429,96 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (isSubmitting) return;
+    if (isSubmitting) {
+      return;
+    }
     
     setIsSubmitting(true);
     
     try {
+      // Validation des données
+      if (!formData.title || !formData.price) {
+        toast.error('Le titre et le prix sont obligatoires');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Validation de la réduction
+      if (formData.reduction && (!formData.reducedPrice || Number(formData.reducedPrice) >= Number(formData.price))) {
+        toast.error('Le prix réduit doit être inférieur au prix normal');
+        setIsSubmitting(false);
+        return;
+      }
+
       // Préparation des suppléments pour l'envoi
-      const formattedSupplements = {
-        ACCESSORY: selectedIngredients.map(id => {
+      const dishSupplements = [
+        ...selectedIngredients.map(id => {
           const option = ingredientOptions.find(opt => opt.value === id);
           return {
-            id,
-            name: option?.label || '',
+            supplement_id: id,
             quantity: ingredientQuantities[id] || 1,
-            type: 'ACCESSORY'
+            supplement: {
+              id,
+              name: option?.label || '',
+              type: 'ACCESSORY'
+            }
           };
         }),
-        FOOD: selectedAccompagnements.map(id => {
+        ...selectedAccompagnements.map(id => {
           const option = accompagnementOptions.find(opt => opt.value === id);
           return {
-            id,
-            name: option?.label || '',
+            supplement_id: id,
             quantity: accompagnementQuantities[id] || 1,
-            type: 'FOOD'
+            supplement: {
+              id,
+              name: option?.label || '',
+              type: 'FOOD'
+            }
           };
         }),
-        DRINK: selectedBoissons.map(id => {
+        ...selectedBoissons.map(id => {
           const option = boissonOptions.find(opt => opt.value === id);
           return {
-            id,
-            name: option?.label || '',
+            supplement_id: id,
             quantity: boissonQuantities[id] || 1,
-            type: 'DRINK'
+            supplement: {
+              id,
+              name: option?.label || '',
+              type: 'DRINK'
+            }
           };
         })
-      };
+      ];
+
+      // Log unique pour la soumission
+      console.log("=== SOUMISSION DU FORMULAIRE ===", {
+        données: {
+          id: initialData?.id || '',
+          nom: formData.title,
+          prix: formData.price,
+          prixReduit: formData.reducedPrice,
+          promotion: formData.reduction,
+          categorie: formData.category[0],
+          restaurants: selectedRestaurants,
+        },
+        suppléments: {
+          ingrédients: {
+            sélectionnés: selectedIngredients,
+            quantités: ingredientQuantities
+          },
+          accompagnements: {
+            sélectionnés: selectedAccompagnements,
+            quantités: accompagnementQuantities
+          },
+          boissons: {
+            sélectionnés: selectedBoissons,
+            quantités: boissonQuantities
+          }
+        }
+      });
       
       // Création de l'objet MenuItem à envoyer
-      onSubmit({
+      const menuData = {
         id: initialData?.id || '',
         name: formData.title,
         categoryId: formData.category[0],
@@ -525,31 +530,43 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
         restaurant: '',
         restaurantId: selectedRestaurants.length > 0 ? selectedRestaurants : formData.restaurant,
         rating: 0,
-        supplements: formattedSupplements,
+        supplements: {
+          ACCESSORY: selectedIngredients.map(id => {
+            const option = ingredientOptions.find(opt => opt.value === id);
+            return {
+              id,
+              name: option?.label || '',
+              quantity: ingredientQuantities[id] || 1,
+              type: 'ACCESSORY'
+            };
+          }),
+          FOOD: selectedAccompagnements.map(id => {
+            const option = accompagnementOptions.find(opt => opt.value === id);
+            return {
+              id,
+              name: option?.label || '',
+              quantity: accompagnementQuantities[id] || 1,
+              type: 'FOOD'
+            };
+          }),
+          DRINK: selectedBoissons.map(id => {
+            const option = boissonOptions.find(opt => opt.value === id);
+            return {
+              id,
+              name: option?.label || '',
+              quantity: boissonQuantities[id] || 1,
+              type: 'DRINK'
+            };
+          })
+        },
         reviews: [],
         totalReviews: 0,
-        
-        isPromotion: formData.reduction,
-        discountedPrice: formData.reduction ? formData.reducedPrice : undefined,
-        // Ajouter les suppléments sélectionnés avec leurs quantités
-        dish_supplements: [
-          ...selectedIngredients.map(id => ({
-            supplement_id: id,
-            quantity: ingredientQuantities[id] || 1,
-            supplement: ingredientOptions.find(opt => opt.value === id)
-          })),
-          ...selectedAccompagnements.map(id => ({
-            supplement_id: id,
-            quantity: accompagnementQuantities[id] || 1,
-            supplement: accompagnementOptions.find(opt => opt.value === id)
-          })),
-          ...selectedBoissons.map(id => ({
-            supplement_id: id,
-            quantity: boissonQuantities[id] || 1,
-            supplement: boissonOptions.find(opt => opt.value === id)
-          }))
-        ]
-      });
+        is_promotion: formData.reduction,
+        promotion_price: formData.reduction ? formData.reducedPrice : undefined,
+        dish_supplements: dishSupplements
+      };
+
+      onSubmit(menuData);
     } catch (error) {
       console.error('Erreur lors de la soumission du formulaire:', error);
       toast.error('Une erreur est survenue lors de la soumission du formulaire');
@@ -585,8 +602,8 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
             >
               <Image
                 src={getSafeImageUrl(imagePreview)}
-                alt="Prévisualisation du plat"
-                className="w-full rounded-xl h-full object-contain"
+                alt="Prévisualisation du menu"
+                className="w-full rounded-xl h-full object-conain"
                 width={140}
                 height={120}
               />
@@ -609,7 +626,7 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
               exit={{ opacity: 0 }}
             >
               <div className="p-2 px-3 bg-[#D9D9D9] rounded-xl">
-                <p className="text-sm text-gray-600">Ajouter une photo du plat</p>
+                <p className="text-sm text-gray-600">Ajouter une photo du menu</p>
               </div>
               <input
                 ref={fileInputRef}
@@ -706,13 +723,20 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
           >
-            <div className="flex items-center mt-2">
+            <div className="flex items-center">
               <Checkbox
                 id="reduction"
                 checked={formData.reduction}
-                onChange={(checked) => setFormData({ ...formData, reduction: checked })}
+                onChange={(checked) => {
+                  console.log('🔄 Changement de l\'état de réduction:', checked);
+                  setFormData(prev => ({
+                    ...prev,
+                    reduction: checked,
+                    reducedPrice: checked ? prev.reducedPrice || '' : ''
+                  }));
+                }}
               />
-              <label htmlFor="reduction" className="ml-2 text-[13px]  font-semibold text-gray-700">
+              <label htmlFor="reduction" className="ml-2 text-[13px] font-semibold text-gray-700">
                 Réduction
               </label>
             </div>
@@ -728,12 +752,22 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
                   <input
                     type="number"
                     value={formData.reducedPrice}
-                    onChange={(e) => setFormData({ ...formData, reducedPrice: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      console.log('💰 Changement du prix réduit:', value);
+                      if (value === '' || (Number(value) >= 0 && Number(value) < Number(formData.price))) {
+                        setFormData(prev => ({
+                          ...prev,
+                          reducedPrice: value
+                        }));
+                      }
+                    }}
                     className="w-full px-2 py-2 text-[13px] focus:outline-none text-[#595959] font-semibold focus:border-transparent"
                     placeholder="0.00"
+                    min="0"
+                    max={formData.price}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2
-                   text-[11px] text-[#acacac] font-semibold bg-[#D9D9D9] p-1 px-4 rounded-xl">XOF</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#acacac] font-semibold bg-[#D9D9D9] p-1 px-4 rounded-xl">XOF</span>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -822,7 +856,7 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
                   {selectedIngredients.length}/3
                 </div>
               </div>
-         
+              
             </motion.div>
 
             {/* Accompagnements */}
@@ -868,7 +902,7 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
                   {selectedBoissons.length}/3
                 </div>
               </div>
-           
+            
             </motion.div>
           </div>
         </div>
@@ -879,7 +913,10 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
         <motion.button
           type="button"
           className="h-[32px] text-[#9796A1] px-8 rounded-[10px] bg-[#ECECEC] text-[13px] items-center justify-center hover:bg-gray-100 min-w-[160px]"
-          onClick={onCancel}
+          onClick={() => {
+            console.log('❌ Annulation du formulaire');
+            onCancel?.();
+          }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -887,9 +924,10 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
         </motion.button>
         <motion.button
           type="submit"
-         className="h-[32px] px-8 rounded-[10px] bg-[#F17922] hover:bg-[#F17922]/90 text-white text-[13px] min-w-[170px]"
+          className="h-[32px] px-8 rounded-[10px] bg-[#F17922] hover:bg-[#F17922]/90 text-white text-[13px] min-w-[170px]"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
+          onClick={() => console.log('🖱️ Bouton submit cliqué')}
         >
           {isEditing ? 'Modifier' : 'Enregistrer'}
         </motion.button>

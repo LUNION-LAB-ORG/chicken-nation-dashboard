@@ -69,8 +69,8 @@ export default function AddSupplement({ onCancel, onSuccess, dish }: AddProductP
       errors.name = 'Le nom du supplément est requis'
     }
     
-    if (formData.price <= 0) {
-      errors.price = 'Le prix doit être supérieur à 0'
+    if (formData.price < 0) {
+      errors.price = 'Le prix ne peut pas être négatif'
     }
     
     if (!formData.category) {
@@ -240,6 +240,7 @@ export default function AddSupplement({ onCancel, onSuccess, dish }: AddProductP
           />
         </div>
         {formErrors.price && <p className="text-red-500 text-xs mt-1">{formErrors.price}</p>}
+        <p className="text-gray-500 text-xs mt-1">Un prix de 0 CFA sera considéré comme gratuit.</p>
       </div>
 
       <div>
@@ -280,7 +281,7 @@ export default function AddSupplement({ onCancel, onSuccess, dish }: AddProductP
                   src={imagePreview} 
                   alt="Aperçu du supplément"
                   fill
-                  className="object-cover"
+                  className="object-contain"
                 />
               </div>
             ) : (
@@ -306,14 +307,14 @@ export default function AddSupplement({ onCancel, onSuccess, dish }: AddProductP
         <Button
           type="button"
           onClick={onCancel}
-          className="h-[32px] text-[#9796A1] px-12 rounded-[10px] bg-[#ECECEC] text-[13px] items-center justify-center hover:bg-gray-100 min-w-[160px]"
+          className="h-[32px] cursor-pointer text-[#9796A1] px-12 rounded-[10px] bg-[#ECECEC] text-[13px] items-center justify-center hover:bg-gray-100 min-w-[160px]"
         >
           Annuler
         </Button>
         <Button 
           type="submit"
           disabled={isLoading}
-          className="h-[32px] px-12 rounded-[10px] bg-[#F17922] hover:bg-[#F17922]/90 text-white text-[13px] min-w-[160px] lg:min-w-[280px] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-[32px] cursor-pointer px-12 rounded-[10px] bg-[#F17922] hover:bg-[#F17922]/90 text-white text-[13px] min-w-[160px] lg:min-w-[280px] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Ajout en cours...' : 'Ajouter un supplément'}
         </Button>

@@ -1,9 +1,10 @@
 import Checkbox from '@/components/ui/Checkbox'
 import { type Order } from './OrdersTable'
 import { Menu } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import OrderContextMenu from './OrderContextMenu'
 import Image from 'next/image';
+import { createPortal } from 'react-dom';
 
 interface OrderRowProps {
   order: Order
@@ -11,7 +12,7 @@ interface OrderRowProps {
   onSelect: (orderId: string, checked: boolean) => void
   onAccept: (orderId: string) => void
   onReject: (orderId: string) => void
-  onViewDetails: (orderId: string) => void
+  onViewDetails: (order: Order) => void
   onHideFromList: (orderId: string) => void
   onRemoveFromList: (orderId: string) => void
   isMobile?: boolean
@@ -46,18 +47,78 @@ const StatusBadge = ({ status }: { status: Order['status'] }) => {
     'COLLECTÉ': 'text-[#17C964]',
     'ANNULÉE': 'text-[#090909]',
     'LIVRAISON': 'text-red-600',
-    'PRÊT':  'text-[#17C964]'
+    'PRÊT': 'text-[#17C964]'
   };
 
   return (
-    <span className={`font-medium text-sm ${styles[status] || 'text-gray-500'}`}>
+    <span className={`font-medium text-sm ${styles[status]}`}>
       {status}
     </span>
   );
 };
 
+// Fonction utilitaire pour formater l'adresse
+const formatAddress = (addressString: string) => {
+  try {
+    const addressObj = JSON.parse(addressString);
+    const parts = [];
+    
+    if (addressObj.title) parts.push(addressObj.title);
+    if (addressObj.street) parts.push(addressObj.street);
+    if (addressObj.city) parts.push(addressObj.city);
+    
+    return parts.join(', ');
+  } catch (e) {
+    // Si l'adresse n'est pas un JSON valide, retourner l'adresse brute
+    return addressString;
+  }
+};
+
 export function OrderRow({ order, isSelected, onSelect, onAccept, onReject, onViewDetails, onHideFromList, onRemoveFromList, isMobile = false }: OrderRowProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    // S'assurer que le portail est rendu dans le body
+    setPortalContainer(document.body);
+  }, []);
+
+  const renderMenu = () => {
+    if (!menuOpen || !portalContainer || !buttonRef.current) return null;
+    
+    // Calculer la position du menu par rapport au bouton
+    const buttonRect = buttonRef.current.getBoundingClientRect();
+    
+    return createPortal(
+      <div 
+        className="fixed" 
+        style={{
+          position: 'absolute',
+          top: `${buttonRect.bottom + window.scrollY}px`,
+          left: `${buttonRect.right - 224 + window.scrollX}px`, // 224px = largeur du menu (w-56)
+          zIndex: 9999
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <OrderContextMenu
+          order={order}
+          isOpen={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          onAccept={onAccept}
+          onReject={onReject}
+          onViewDetails={onViewDetails}
+          onHideFromList={onHideFromList}
+          onRemoveFromList={onRemoveFromList}
+        />
+      </div>,
+      portalContainer
+    );
+  };
+
+  const handleViewDetails = () => {
+    onViewDetails(order);
+  };
 
   if (isMobile) {
     return (
@@ -72,14 +133,14 @@ export function OrderRow({ order, isSelected, onSelect, onAccept, onReject, onVi
           <div className="flex-1">
             <div className="flex justify-between items-start mb-3">
               <div>
-                <div className="font-medium text-[#71717A]">{order.id}</div>
+                <div className="font-medium text-[#71717A]">{order.reference}</div>
                 <div className="text-xs text-gray-500">{order.date}</div>
               </div>
               <OrderTypeBadge type={order.orderType} />
             </div>
             <div className="mb-3">
               <div className="font-medium text-[#71717A]">{order.clientName}</div>
-              <div className="text-xs text-gray-500 truncate max-w-[200px]">{order.address}</div>
+              <div className="text-xs text-gray-500 truncate">{formatAddress(order.address)}</div>
             </div>
             <div className="flex justify-between items-center mb-2">
               <div className="text-sm font-bold text-[#F17922]">{(order.totalPrice || 0).toLocaleString()} F</div>
@@ -88,23 +149,16 @@ export function OrderRow({ order, isSelected, onSelect, onAccept, onReject, onVi
             <div className="flex justify-end mt-2">
               <div className="relative">
                 <button 
-                  className="p-1.5 text-gray-500 hover:text-[#F17922] rounded-lg hover:bg-orange-100"
-                  onClick={() => setMenuOpen(!menuOpen)}
+                  ref={buttonRef}
+                  className="p-1.5 text-gray-500 hover:text-[#F17922] rounded-lg hover:bg-orange-100 menu-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen(!menuOpen);
+                  }}
                 >
                   <Menu size={20} />
                 </button>
-                {menuOpen && (
-                  <OrderContextMenu
-                    order={order}
-                    isOpen={menuOpen}
-                    onClose={() => setMenuOpen(false)}
-                    onAccept={onAccept}
-                    onReject={onReject}
-                    onViewDetails={onViewDetails}
-                    onHideFromList={onHideFromList}
-                    onRemoveFromList={onRemoveFromList}
-                  />
-                )}
+                {renderMenu()}
               </div>
             </div>
           </div>
@@ -122,7 +176,7 @@ export function OrderRow({ order, isSelected, onSelect, onAccept, onReject, onVi
         />
       </td>
       <td className="whitespace-nowrap py-3 px-3 sm:px-4">
-        <span className="text-sm font-medium text-[#71717A]">{order.id}</span>
+        <span className="text-sm font-medium text-[#71717A]">{order.reference}</span>
       </td>
       <td className="whitespace-nowrap py-3 px-3 sm:px-4">
         <span className="text-sm text-gray-500">{order.date}</span>
@@ -134,7 +188,9 @@ export function OrderRow({ order, isSelected, onSelect, onAccept, onReject, onVi
         <OrderTypeBadge type={order.orderType} />
       </td>
       <td className="whitespace-nowrap py-3 px-3 sm:px-4">
-        <span className="text-sm text-gray-500 max-w-[150px] truncate inline-block">{order.address}</span>
+        <span className="text-sm text-gray-500 max-w-[200px] truncate" title={formatAddress(order.address)}>
+          {formatAddress(order.address)}
+        </span>
       </td>
       <td className="whitespace-nowrap py-3 px-3 sm:px-4">
         <span className="text-sm font-medium">{(order.totalPrice || 0).toLocaleString()} F</span>
@@ -144,23 +200,16 @@ export function OrderRow({ order, isSelected, onSelect, onAccept, onReject, onVi
       </td>
       <td className="whitespace-nowrap py-3 px-3 sm:px-4 text-center relative">
         <button 
-          className="p-1 text-[#71717A] cursor-pointer hover:text-gray-700 rounded-lg hover:bg-orange-200"
-          onClick={() => setMenuOpen(!menuOpen)}
+          ref={buttonRef}
+          className="p-1 text-[#71717A] cursor-pointer hover:text-gray-700 rounded-lg hover:bg-orange-200 menu-button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setMenuOpen(!menuOpen);
+          }}
         >
           <Menu size={20} />
         </button>
-        {menuOpen && (
-          <OrderContextMenu
-            order={order}
-            isOpen={menuOpen}
-            onClose={() => setMenuOpen(false)}
-            onAccept={onAccept}
-            onReject={onReject}
-            onViewDetails={onViewDetails}
-            onHideFromList={onHideFromList}
-            onRemoveFromList={onRemoveFromList}
-          />
-        )}
+        {renderMenu()}
       </td>
     </tr>
   );

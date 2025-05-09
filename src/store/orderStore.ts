@@ -3,14 +3,13 @@
 import { create } from 'zustand';
 import {
   Order,
-  OrderStatus, 
-} from '@/types/order';
-import {
+  OrderQuery,
+  OrderStatus,
+  OrderType, 
   getOrders,
   getOrderById,
   updateOrderStatus,
-  deleteOrder,
-  OrderSearchParams
+  deleteOrder
 } from '@/services/orderService';
 
 interface OrderState {
@@ -24,10 +23,20 @@ interface OrderState {
     totalItems: number;
     itemsPerPage: number;
   };
-  filters: OrderSearchParams;
+  filters: {
+    status?: OrderStatus;
+    type?: OrderType;
+    customerId?: string;
+    restaurantId?: string;
+    startDate?: string;
+    endDate?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    search?: string;
+  };
   
   // Actions
-  fetchOrders: (params?: OrderSearchParams) => Promise<void>;
+  fetchOrders: (params?: OrderQuery) => Promise<void>;
   fetchOrderById: (id: string) => Promise<Order | null>;
   setSelectedOrder: (order: Order | null) => void;
   updateOrderStatus: (id: string, status: OrderStatus) => Promise<Order | null>;
@@ -53,11 +62,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   error: null,
   filters: {},
 
-  fetchOrders: async (params?: OrderSearchParams) => {
+  fetchOrders: async (params?: OrderQuery) => {
     set({ isLoading: true, error: null });
     try {
     
-      const queryParams: OrderSearchParams = {
+      const queryParams: OrderQuery = {
         page: get().pagination.currentPage,
         limit: get().pagination.itemsPerPage,
         ...params,
@@ -105,17 +114,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const order = await getOrderById(id);
-      
-      
-      if (order === null) {
-        set({
-          isLoading: false,
-          selectedOrder: null,
-          error: "Erreur d'authentification. Redirection vers la page de connexion..."
-        });
-        return null;
-      }
-      
       set({
         selectedOrder: order,
         isLoading: false,
@@ -123,11 +121,14 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       return order;
     } catch (error) {
       console.error('Erreur lors du chargement de la commande:', error);
+  
+      
       set({
         isLoading: false,
         selectedOrder: null,
         error: error instanceof Error ? error.message : 'Une erreur est survenue lors du chargement de la commande'
       });
+      
       return null;
     }
   },
@@ -139,33 +140,26 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   updateOrderStatus: async (id: string, status: OrderStatus) => {
     set({ isLoading: true, error: null });
     try {
-       const updatedOrder = await updateOrderStatus(id, status);
-     
+      
+      const updatedOrder = await updateOrderStatus(id, status);
       
       // Mettre à jour la commande dans la liste
-      set(state => {
-         return {
-          orders: state.orders.map(order => {
-            if (order.id === id) {
-               return { ...order, status };
-            }
-            return order;
-          }),
-          selectedOrder: state.selectedOrder?.id === id ? { ...state.selectedOrder, status } : state.selectedOrder,
-          isLoading: false
-        };
-      });
+      set(state => ({
+        orders: state.orders.map(order => 
+          order.id === id ? { ...order, status } : order
+        ),
+        selectedOrder: state.selectedOrder?.id === id ? { ...state.selectedOrder, status } : state.selectedOrder,
+        isLoading: false
+      }));
       
-      console.log(`[orderStore] Mise à jour du statut terminée avec succès`);
       return updatedOrder;
     } catch (error) {
-      console.error('[orderStore] Erreur lors de la mise à jour du statut de la commande:', error);
+      console.error('Erreur lors de la mise à jour du statut de la commande:', error);
       set({
         isLoading: false,
         error: error instanceof Error ? error.message : 'Une erreur est survenue lors de la mise à jour du statut de la commande'
       });
-      // Propager l'erreur au lieu de retourner null
-      throw error;
+      return null;
     }
   },
 

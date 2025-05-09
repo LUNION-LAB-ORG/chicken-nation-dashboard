@@ -60,7 +60,7 @@ export default function SupplementView({
       
       setMenuPosition({ 
         top: event.clientY, 
-        left: event.clientX 
+        left: event.clientX - 150 // Décaler le menu vers la droite (valeur négative pour décaler vers la gauche)
       });
       setMenuOpenId(productId);
     }
@@ -142,7 +142,7 @@ export default function SupplementView({
                           ? product.image 
                           : `${API_URL}/${product.image}`)
                         : '/images/plat.png'}
-                      alt={product.name}
+                      alt={product.name || 'Image du supplément'}
                       width={40}
                       height={40}
                       className="w-full h-full object-cover "
@@ -151,7 +151,13 @@ export default function SupplementView({
                 </td>
                 <td className="py-4 text-[13px] text-gray-900  ">{product.name}</td>
                 <td className="py-4 text-[13px] text-gray-900">{translateCategory(product.category) || 'Non catégorisé'}</td>
-                <td className="py-4 text-[13px] text-gray-900 text-right pr-8">{product.price} XOF</td>
+                <td className="py-4 text-[13px] text-gray-900 text-right pr-8">
+                  {product.price === 0 ? (
+                    <span className="text-[#F17922] font-medium">Gratuit</span>
+                  ) : (
+                    `${product.price} XOF`
+                  )}
+                </td>
                 <td className="py-4 px-4">
                   <div className="flex items-center justify-center">
                     <Toggle 
@@ -195,7 +201,7 @@ export default function SupplementView({
               </tr>
             ))}
             {safeProducts.length === 0 && (
-              <tr>
+              <tr key="empty-supplements-row">
                 <td colSpan={7} className="py-8 text-center">
                   <div className='flex items-center justify-center flex-col gap-4'>
                     <span className='text-[14px] text-[#F17922]'>
@@ -231,10 +237,10 @@ export default function SupplementView({
                     ? product.image 
                     : `${API_URL}/${product.image}`)
                   : '/images/plat.png'}
-                alt={product.name}
+                alt={product.name || 'Image du supplément'}
                 width={56}
                 height={56}
-                className="object-contain w-full h-full"
+                className="object-cover w-full h-full"
               />
             </div>
             <div className="flex-1 min-w-0">
@@ -244,7 +250,13 @@ export default function SupplementView({
                   {translateCategory(product.category)}
                 </span>
               </div>
-              <div className="text-[12px] text-[#71717A] truncate">{product.price} XOF</div>
+              <div className="text-[12px] text-[#71717A] truncate">
+                {product.price === 0 ? (
+                  <span className="text-[#F17922] font-medium">Gratuit</span>
+                ) : (
+                  `${product.price} XOF`
+                )}
+              </div>
               <div className="flex items-center justify-between mt-2">
                 <div className="text-[11px] text-[#F17922] font-medium">
                   {product.available ? 'Disponible' : 'Non disponible'}
@@ -273,7 +285,7 @@ export default function SupplementView({
         ))}
         
         {safeProducts.length === 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-[#ECECEC] p-6 flex flex-col items-center justify-center">
+          <div key="empty-supplements-mobile" className="bg-white rounded-xl shadow-sm border border-[#ECECEC] p-6 flex flex-col items-center justify-center">
             <span className="text-[14px] text-[#F17922] mb-4">
               Aucun supplément trouvé
             </span>
@@ -286,7 +298,7 @@ export default function SupplementView({
             </button>
           </div>
         )}
-      </div>  
+      </div> 
     </div>
   )
 }

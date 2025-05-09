@@ -1,6 +1,6 @@
 import { API_URL } from '@/config';
 import { MenuItem } from '@/types';
-import { betterApiClient } from './betterApiClient';
+import { api, apiRequest } from './api';
 import { formatImageUrl } from '@/utils/imageHelpers';
 import { API_ENDPOINTS } from '@/constants/menuConstants';
 
@@ -38,7 +38,6 @@ export const formatMenuFromApi = (apiMenu: any): MenuItem => {
     restaurant: apiMenu.restaurant || '',
     restaurantId: apiMenu.restaurant_id || '',
     price: apiMenu.price?.toString() || '0',
-    rating: apiMenu.rating || 0,
     categoryId: apiMenu.category_id || '',
     isAvailable: apiMenu.available !== false,
     isNew: apiMenu.is_new || false,
@@ -47,18 +46,36 @@ export const formatMenuFromApi = (apiMenu: any): MenuItem => {
     supplements: apiMenu.supplements || {},
     reviews: apiMenu.reviews || [],
     totalReviews: apiMenu.total_reviews || 0,
-    discountedPrice: apiMenu.promotion_price?.toString(),
-    originalPrice: apiMenu.price?.toString(),
-    isPromotion: apiMenu.is_promotion || false
+    is_promotion: apiMenu.is_promotion || false,
+    promotion_price: apiMenu.promotion_price?.toString() || undefined
   };
+};
+
+const getAuthToken = (): string => {
+  const authData = localStorage.getItem('chicken-nation-auth');
+  if (!authData) {
+    throw new Error('Authentication required');
+  }
+  
+  const parsedData = JSON.parse(authData);
+  const token = parsedData?.state?.accessToken;
+  
+  if (!token) {
+    throw new Error('Authentication token not found');
+  }
+  
+  return token;
 };
 
 // Récupérer tous les menus
 export const getAllMenus = async (): Promise<MenuItem[]> => {
   try {
-    const responseData = await betterApiClient.get<{data: any[]}>('/dishes');
+     const responseData = await apiRequest<any>(
+      '/dishes',  
+      'GET'
+    );
     
-    const menus = Array.isArray(responseData) ? responseData : (responseData.data || []);
+     const menus = responseData.data || responseData;
     
     // Formater les menus pour correspondre au type MenuItem
     return menus.map((menu: any) => formatMenuFromApi(menu));
@@ -70,7 +87,10 @@ export const getAllMenus = async (): Promise<MenuItem[]> => {
 
 export const getMenuById = async (id: string): Promise<any> => {
   try {
-    const menuData = await betterApiClient.get<any>(`/dishes/${id}`);
+     const menuData = await apiRequest<any>(
+      `/dishes/${id}`,  
+      'GET'
+    );
     
     const data = menuData.data || menuData;
     
@@ -84,7 +104,11 @@ export const getMenuById = async (id: string): Promise<any> => {
 // Créer un nouveau menu
 export const createMenu = async (menuData: FormData): Promise<MenuItem> => {
   try {
-    const result = await betterApiClient.postFormData<any>(`/dishes`, menuData);
+     const result = await apiRequest<any>(
+      '/dishes',  
+      'POST',
+      menuData
+    );
     
     const menuResult = result.data || result;
     
@@ -97,7 +121,12 @@ export const createMenu = async (menuData: FormData): Promise<MenuItem> => {
 
 export const updateMenu = async (id: string, menuData: FormData): Promise<MenuItem> => {
   try {
-    const result = await betterApiClient.postFormData<any>(`/dishes/${id}`, menuData);
+     const result = await apiRequest<any>(
+      `/dishes/${id}`,  
+      'PATCH',
+      menuData,
+      true  
+    );
     
     const menuResult = result.data || result;
     return formatMenuFromApi(menuResult);
@@ -107,49 +136,10 @@ export const updateMenu = async (id: string, menuData: FormData): Promise<MenuIt
   }
 };
 
-// Supprimer un menu
-export const deleteMenu = async (id: string): Promise<void> => {
-  try {
-    await betterApiClient.delete(`/dishes/${id}`);
-    
-    console.log('Plat supprimé avec succès');
-  } catch (error) {
-    console.error(`Erreur lors de la suppression du plat ${id}:`, error);
-    throw error;
-  }
-};
-
-export const getAllMenuCategories = async (): Promise<any[]> => {
-  try {
-    const data = await betterApiClient.get<{data: any[]}>(`/menu-categories`);
-    
-    return data.data || [];
-  } catch (error) {
-    console.error('Erreur lors de la récupération des catégories de plat:', error);
-    throw error;
-  }
-};
-
-export const updateMenuAvailability = async (id: string, available: boolean): Promise<MenuItem> => {
-  try {
-    const formData = new FormData();
-    formData.append('available', available.toString());
-    
-    const result = await betterApiClient.postFormData<any>(`/dishes/${id}`, formData);
-    
-    const menuResult = result.data || result;
-    
-    return formatMenuFromApi(menuResult);
-  } catch (error) {
-    console.error(`Erreur lors de la mise à jour de la disponibilité du menu ${id}:`, error);
-    throw error;
-  }
-};
-
 export const menuToFormData = (menu: MenuItem): FormData => {
   const formData = new FormData();
   
-  formData.append('name', menu.name);
+   formData.append('name', menu.name);
   formData.append('description', menu.description || '');
   formData.append('price', menu.price.toString());
   formData.append('category_id', menu.categoryId);
@@ -164,10 +154,10 @@ export const menuToFormData = (menu: MenuItem): FormData => {
     formData.append('image', blob, 'image.jpg');
   }
   
-  if (menu.isPromotion) {
+   if (menu.is_promotion) {
     formData.append('is_promotion', 'true');
-    if (menu.discountedPrice) {
-      formData.append('promotion_price', menu.discountedPrice);
+    if (menu.promotion_price) {
+      formData.append('promotion_price', menu.promotion_price);
     }
   }
   
@@ -186,4 +176,56 @@ const dataURLtoBlob = (dataURL: string): Blob => {
   }
   
   return new Blob([u8arr], { type: mime });
+};
+
+// Supprimer un menu
+export const deleteMenu = async (id: string): Promise<void> => {
+  try {
+   
+    await apiRequest<any>(
+      `/dishes/${id}`,  
+      'DELETE'
+    );
+    
+    console.log('Plat supprimé avec succès');
+  } catch (error) {
+    console.error(`Erreur lors de la suppression du plat ${id}:`, error);
+    throw error;
+  }
+};
+
+export const getAllMenuCategories = async (): Promise<any[]> => {
+  try {
+   
+    const data = await apiRequest<any>(
+      '/menu-categories',  
+      'GET'
+    );
+    
+    return data.data || [];
+  } catch (error) {
+    console.error('Erreur lors de la récupération des catégories de plat:', error);
+    throw error;
+  }
+};
+
+export const updateMenuAvailability = async (id: string, available: boolean): Promise<MenuItem> => {
+  try {
+    const formData = new FormData();
+    formData.append('available', available ? '1' : '0');
+    
+  
+    const result = await apiRequest<any>(
+      `/dishes/${id}`, 
+      'PATCH',
+      formData
+    );
+    
+    const menuResult = result.data || result;
+    
+    return formatMenuFromApi(menuResult);
+  } catch (error) {
+    console.error(`Erreur lors de la mise à jour de la disponibilité du menu ${id}:`, error);
+    throw error;
+  }
 };

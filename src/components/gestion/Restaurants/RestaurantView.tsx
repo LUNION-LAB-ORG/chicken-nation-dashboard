@@ -129,9 +129,9 @@ export default function RestaurantView({
           <div className="flex flex-col">
             <span className="text-[#F17922] text-2xl font-regular -mt-1">{restaurant.name}</span>
           </div>
-          <div className="ml-8 bg-[#E8FAF0] text-[#34C759] px-4 py-1.5 font-bold rounded-3xl text-md">
+          {/* <div className="ml-8 bg-[#E8FAF0] text-[#34C759] px-4 py-1.5 font-bold rounded-3xl text-md">
             SuperAdmin
-          </div>
+          </div> */}
         </div>
         <div className="flex gap-2 items-center">
           <button className="bg-[#F17922] text-white px-4 py-2 rounded-full text-sm">

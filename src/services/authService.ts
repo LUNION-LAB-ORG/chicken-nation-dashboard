@@ -1,15 +1,15 @@
- import { betterApiClient } from './betterApiClient';
+ 
+import { api } from './api';
 import { LoginCredentials, LoginResponse } from '@/types/auth';
 
-const AUTH_ENDPOINT = '/auth';
-
+ const AUTH_ENDPOINT = '/auth';
+ 
 export type AuthResponse = LoginResponse;
 
 export interface RefreshTokenResponse {
   accessToken?: string;
   token?: string; 
 }
-
 const translateErrorMessage = (error: any): string => {
   if (!(error instanceof Error)) {
     return 'Une erreur inconnue est survenue';
@@ -17,7 +17,7 @@ const translateErrorMessage = (error: any): string => {
 
   const message = error.message.toLowerCase();
   
-  if (message.includes('user not found') || message.includes('utilisateur non trouvé')) {
+   if (message.includes('user not found') || message.includes('utilisateur non trouvu00e9')) {
     return 'Identifiants incorrects. Veuillez vérifier votre email.';
   }
   
@@ -35,13 +35,14 @@ const translateErrorMessage = (error: any): string => {
  
   return 'Une erreur est survenue lors de la connexion. Veuillez réessayer.';
 };
-
+ 
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
+  console.log('Tentative de connexion avec:', { email: credentials.email });
   
   try {
-    const response = await betterApiClient.post<AuthResponse>(`${AUTH_ENDPOINT}/login`, credentials);
+    const response = await api.post<AuthResponse>(`${AUTH_ENDPOINT}/login`, credentials, false);
     
-    const normalizedResponse: AuthResponse = {
+     const normalizedResponse: AuthResponse = {
       ...response,
       accessToken: response.token || response.accessToken,
     };
@@ -59,37 +60,44 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
     return normalizedResponse;
   } catch (error) {
     console.error('Erreur lors de la connexion:', error);
-    const frenchErrorMessage = translateErrorMessage(error);
+     const frenchErrorMessage = translateErrorMessage(error);
     throw new Error(frenchErrorMessage);
   }
 };
-
+ 
 export const refreshToken = async (refreshToken: string): Promise<RefreshTokenResponse> => {
-  console.log('Tentative de rafraichissement du token avec:', { tokenLength: refreshToken?.length });
-  console.log('Refresh token utilisé (début):', refreshToken?.substring(0, 10) + '...');
+ 
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/api/v1${AUTH_ENDPOINT}/refresh-token?type=USER`;
  
   try {
-    // Utiliser directement betterApiClient avec un header d'autorisation personnalisé
-    const response = await betterApiClient.get<RefreshTokenResponse>('/auth/refresh-token', {
+    const response = await fetch(url, {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${refreshToken}`,
       },
     });
     
-    console.log('Réponse du rafraichissement:', response);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Erreur de rafraîchissement du token:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
+       const frenchErrorMessage = translateErrorMessage(new Error(errorData.message || `API request failed with status ${response.status}`));
+      throw new Error(frenchErrorMessage);
+    }
     
+    const data = await response.json();
     // Normaliser la réponse
     const normalizedData = {
-      accessToken: response.token || response.accessToken,
-      token: response.token || response.accessToken, // Assurer la compatibilité
-      ...response
+      accessToken: data.token || data.accessToken,
+      ...data
     };
-    
-    console.log('Données normalisées:', { hasToken: !!normalizedData.token, hasAccessToken: !!normalizedData.accessToken });
  
     return normalizedData;
   } catch (error) {
-    console.error('Erreur lors du rafraichissement du token:', error);
+    console.error('Erreur lors du rafraîchissement du token:', error);
     // Traduire le message d'erreur en français
     const frenchErrorMessage = translateErrorMessage(error);
     throw new Error(frenchErrorMessage);

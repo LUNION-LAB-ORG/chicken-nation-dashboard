@@ -82,8 +82,8 @@ export default function EditSupplement({ onCancel, onSuccess, product }: EditSup
       errors.name = 'Le nom du supplément est requis'
     }
     
-    if (formData.price <= 0) {
-      errors.price = 'Le prix doit être supérieur à 0'
+    if (formData.price < 0) {
+      errors.price = 'Le prix ne peut pas être négatif'
     }
     
     if (!formData.category) {
@@ -160,11 +160,16 @@ export default function EditSupplement({ onCancel, onSuccess, product }: EditSup
     setIsLoading(true)
     
     try {
+      // Vérifier d'abord si la disponibilité a changé
+      if (product.available !== formData.available) {
+        // Mettre à jour la disponibilité séparément
+        await updateSupplementAvailability(product.id, formData.available)
+      }
+      
       const fd = new FormData()
       fd.append('name', formData.name)
       fd.append('price', formData.price.toString())
       fd.append('category', formData.category)
-      fd.append('available', formData.available ? 'true' : 'false')
       
       if (formData.description) {
         fd.append('description', formData.description)
@@ -174,34 +179,16 @@ export default function EditSupplement({ onCancel, onSuccess, product }: EditSup
         fd.append('image', formData.image)
       }
       
-      // Récupérer le token
-      const token = localStorage.getItem('chicken-nation-auth') 
-        ? JSON.parse(localStorage.getItem('chicken-nation-auth') || '{}')?.state?.accessToken 
-        : null;
+      // Importer le client API depuis services/api
+      const { api } = await import('@/services/api')
       
-      if (!token) {
-        throw new Error('Authentication required');
-      }
+      // Utiliser le client API pour envoyer la requête
+      // Cela gère automatiquement l'authentification et le refresh token
+      const updatedSupplement = await api.patch<Dish>(
+        `/supplements/${product.id}`,
+        fd
+      )
       
-      // URL de l'API
-      const API_URL = process.env.NEXT_PUBLIC_API_URL;
-      
-      // Envoyer directement le FormData pour mettre à jour le supplément
-      const response = await fetch(`${API_URL}/api/v1/supplements/${product.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: fd
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Erreur API:', response.status, errorText);
-        throw new Error(`Erreur ${response.status}: ${errorText}`);
-      }
-      
-      const updatedSupplement = await response.json();
       toast.success('Supplément mis à jour avec succès')
       
       if (onSuccess) await onSuccess(updatedSupplement)
@@ -212,6 +199,32 @@ export default function EditSupplement({ onCancel, onSuccess, product }: EditSup
       setIsLoading(false)
     }
   }
+
+   const handleAvailabilityToggle = async (checked: boolean) => {
+    try {
+      if (!product) return;
+      
+      // Mettre à jour l'état local
+      setFormData(prev => ({
+        ...prev,
+        available: checked
+      }));
+      
+      // Appeler directement l'API pour mettre à jour la disponibilité
+      await updateSupplementAvailability(product.id, checked);
+      
+      toast.success(`Disponibilité mise à jour avec succès !`);
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de la disponibilité:', error);
+      toast.error('Erreur lors de la mise à jour de la disponibilité');
+      
+      // Restaurer l'état précédent en cas d'erreur
+      setFormData(prev => ({
+        ...prev,
+        available: !checked
+      }));
+    }
+  };
 
   // Transformer les catégories en options pour le Select
   const categoryOptions = [
@@ -260,6 +273,7 @@ export default function EditSupplement({ onCancel, onSuccess, product }: EditSup
           />
         </div>
         {formErrors.price && <p className="text-red-500 text-xs mt-1">{formErrors.price}</p>}
+        <p className="text-gray-500 text-xs mt-1">Un prix de 0 CFA sera considéré comme gratuit.</p>
       </div>
 
       <div>
@@ -280,8 +294,11 @@ export default function EditSupplement({ onCancel, onSuccess, product }: EditSup
        <div className='flex-1 flex items-center justify-between'>
         <span>Disponible</span>
         <Toggle 
-          checked={formData.available || false} 
-          onChange={(checked) => handleToggleChange('available', checked)}
+          checked={formData.available} 
+          onChange={(checked) => {
+            console.log('Toggle change:', checked);
+            handleAvailabilityToggle(checked);
+          }}
         />
         </div>
 
@@ -329,14 +346,14 @@ export default function EditSupplement({ onCancel, onSuccess, product }: EditSup
         <Button
           type="button"
           onClick={onCancel}
-          className="h-[32px] text-[#9796A1] px-12 rounded-[10px] bg-[#ECECEC] text-[13px] items-center justify-center hover:bg-gray-100 min-w-[160px]"
+          className="h-[32px] text-[#9796A1] px-12 cursor-pointer rounded-[10px] bg-[#ECECEC] text-[13px] items-center justify-center hover:bg-gray-100 min-w-[160px]"
         >
           Annuler
         </Button>
         <Button 
           type="submit"
           disabled={isLoading}
-          className="h-[32px] px-12 rounded-[10px] bg-[#F17922] hover:bg-[#F17922]/90 text-white text-[13px] min-w-[160px] lg:min-w-[280px] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-[32px] px-12 cursor-pointer rounded-[10px] bg-[#F17922] hover:bg-[#F17922]/90 text-white text-[13px] min-w-[160px] lg:min-w-[280px] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Enregistrement...' : 'Mettre à jour'}
         </Button>

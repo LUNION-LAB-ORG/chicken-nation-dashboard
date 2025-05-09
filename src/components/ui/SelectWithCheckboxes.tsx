@@ -117,7 +117,7 @@ const SelectWithCheckboxes = ({
               }}
             >
               <span className="text-[#595959] font-regular text-[13px]">Tous les restaurants</span>
-              <div className={`w-5 h-5 rounded-md ${value.length === options.length ? 'bg-[#F17922]' : 'border-2 border-gray-300'} flex items-center justify-center`}>
+              <div className={`w-6 h-6 rounded-md ${value.length === options.length ? 'bg-[#F17922]' : 'border-2 border-gray-300'} flex items-center justify-center`}>
                 {value.length === options.length && (
                   <svg width="14" height="10" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M1 5L5 9L13 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -143,7 +143,7 @@ const SelectWithCheckboxes = ({
                 }}
               >
                 <span className="text-[#595959] font-regular text-[13px]">{option.label}</span>
-                <div className={`w-5 h-5 rounded-md ${value.includes(option.value) ? 'bg-[#F17922]' : 'border-2 border-gray-300'} flex items-center justify-center`}>
+                <div className={`w-6 h-6 rounded-md ${value.includes(option.value) ? 'bg-[#F17922]' : 'border-2 border-gray-300'} flex items-center justify-center`}>
                   {value.includes(option.value) && (
                     <svg width="14" height="10" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M1 5L5 9L13 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

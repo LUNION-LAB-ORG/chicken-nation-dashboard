@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { sofia, urbanist } from './fonts';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { GoogleMapsProvider } from '@/contexts/GoogleMapsContext'
 
 // Métadonnées de l'application
 export const metadata: Metadata = {
@@ -21,16 +21,16 @@ export default function RootLayout({
       <head>
       </head>
       <body className="font-sofia" suppressHydrationWarning>
-        <AuthProvider>
-          <Toaster position="top-right" toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#333',
-              color: '#fff',
-            },
-          }} />
+        <Toaster position="top-right" toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#333',
+            color: '#fff',
+          },
+        }} />
+        <GoogleMapsProvider>
           {children}
-        </AuthProvider>
+        </GoogleMapsProvider>
       </body>
     </html>
   );

@@ -220,14 +220,14 @@ export default function AddCategory({ onClose, onSave, category }: AddCategoryPr
           type="button"
           onClick={onClose}
           disabled={isLoading}
-          className="h-[32px] text-[#9796A1] px-12 rounded-[10px] bg-[#ECECEC] text-[13px] items-center justify-center hover:bg-gray-100 min-w-[160px]"
+          className="h-[32px] cursor-pointer text-[#9796A1] px-12 rounded-[10px] bg-[#ECECEC] text-[13px] items-center justify-center hover:bg-gray-100 min-w-[160px]"
         >
           Annuler
         </Button>
         <Button 
           type="submit"
           disabled={isLoading}
-          className="h-[32px] px-12 rounded-[10px] bg-[#F17922] hover:bg-[#F17922]/90 text-white text-[13px] min-w-[280px] flex items-center justify-center"
+          className="h-[32px] cursor-pointer px-12 rounded-[10px] bg-[#F17922] hover:bg-[#F17922]/90 text-white text-[13px] min-w-[280px] flex items-center justify-center"
         >
           {isLoading ? (
             <>
