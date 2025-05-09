@@ -1,7 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import { Customer, CustomerQuery, getCustomers, getCustomerById } from '@/services/customerService';
+import { Customer, CustomerQuery, PaginatedResponse, getCustomers, getCustomerById } from '@/services/customerService';
 
 interface CustomerState {
   customers: Customer[];
@@ -140,7 +140,8 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
       const customer = await getCustomerById(id);
     
       
-       if (customer === null) {
+      // Si la réponse est null (erreur d'authentification générée)
+      if (customer === null) {
         set({
           isLoading: false,
           selectedCustomer: null,
@@ -181,7 +182,7 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
       },
       pagination: {
         ...state.pagination,
-        currentPage: 1,  
+        currentPage: 1, // Réinitialiser la page lors du changement de filtre
       }
     }));
     get().fetchCustomers();

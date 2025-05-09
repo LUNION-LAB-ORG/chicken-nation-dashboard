@@ -11,6 +11,7 @@ import ScheduleSelector from './ScheduleSelector'
 import { createRestaurant, createRestaurantJSON, updateRestaurant, getRestaurantManager, Restaurant, Schedule } from '@/services/restaurantService'
  
 import ManagerCredentialsModal from './ManagerCredentialsModal'
+import RestaurantMap from './RestaurantMap'
 
  
 interface RestaurantManager {
@@ -435,7 +436,7 @@ export default function AddRestaurant({ onCancel, onSuccess, restaurant }: AddRe
             {formErrors.description && <p className="text-red-500 text-xs mt-1">{formErrors.description}</p>}
           </div>
           
-          {/* Adresse */}
+          {/* Adresse
           <div>
             <label className="block text-sm text-[#595959] font-light mb-2">
               Adresse
@@ -453,82 +454,28 @@ export default function AddRestaurant({ onCancel, onSuccess, restaurant }: AddRe
               />
             </div>
             {formErrors.address && <p className="text-red-500 text-xs mt-1">{formErrors.address}</p>}
+          </div> */}
+          
+          {/* Carte */}
+          <div>
+            <label className="block text-sm text-[#595959] font-light mb-2">
+              Localisation
+            </label>
+            <RestaurantMap
+              initialLat={formData.latitude}
+              initialLng={formData.longitude}
+              onLocationChange={(lat, lng, address) => {
+                setFormData(prev => ({
+                  ...prev,
+                  latitude: lat,
+                  longitude: lng,
+                  address: address
+                }));
+              }}
+            />
           </div>
           
-          {/* Coordonnées géographiques */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm text-[#595959] font-light mb-2">
-                Latitude
-              </label>
-              <Input
-                name="latitude"
-                type="text"
-                value={formData.latitude.toString()}
-                onChange={handleChange}
-                placeholder="Ex: 3.4"
-                className={`w-full h-[42px] rounded-xl bg-white border ${formErrors.latitude ? 'border-red-500' : 'border-[#D8D8D8]'} px-4 text-[13px] placeholder-gray-400`}
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-[#595959] font-light mb-2">
-                Longitude
-              </label>
-              <Input
-                name="longitude"
-                type="text"
-                value={formData.longitude.toString()}
-                onChange={handleChange}
-                placeholder="Ex: -5.7"
-                className={`w-full h-[42px] rounded-xl bg-white border ${formErrors.longitude ? 'border-red-500' : 'border-[#D8D8D8]'} px-4 text-[13px] placeholder-gray-400`}
-              />
-            </div>
-          </div>
-          
-          {/* Contact */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm text-[#595959] font-light mb-2">
-                Téléphone
-              </label>
-              <Input
-                name="phone"
-                type="text"
-                value={formData.phone}
-                onChange={handleChange}
-                required
-                placeholder="+225 XX XX XX XX"
-                className={`w-full h-[42px] rounded-xl bg-white border ${formErrors.phone ? 'border-red-500' : 'border-[#D8D8D8]'} px-4 text-[13px] placeholder-gray-400`}
-              />
-              {formErrors.phone && <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>}
-            </div>
-            <div>
-              <label className="block text-sm text-[#595959] font-light mb-2">
-                Email
-              </label>
-              <Input
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                placeholder="email@restaurant.com"
-                className={`w-full h-[42px] rounded-xl bg-white border ${formErrors.email ? 'border-red-500' : 'border-[#D8D8D8]'} px-4 text-[13px] placeholder-gray-400`}
-              />
-              {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
-            </div>
-
-            {/* Actif/Inactif */}
-            <div className="mt-3 w-full">
-              <div className='flex items-center justify-between bg-gray-50 p-3 rounded-lg'>
-                <span className="text-sm font-medium text-gray-700">Restaurant actif</span>
-                <Toggle 
-                  checked={formData.active || false} 
-                  onChange={(checked) => handleToggleChange('active', checked)}
-              />
-            </div>
-          </div>
-          </div>
+     
           
           Photo
           <div>
@@ -545,7 +492,7 @@ export default function AddRestaurant({ onCancel, onSuccess, restaurant }: AddRe
                     src={imagePreview} 
                     alt="Aperçu du restaurant"
                     fill
-                    className="object-cover"
+                    className="object-contain"
                   />
                 </div>
               ) : (
@@ -629,7 +576,50 @@ export default function AddRestaurant({ onCancel, onSuccess, restaurant }: AddRe
               onChange={handleScheduleChange}
             />
           </div>
-          
+               {/* Contact */}
+               <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm text-[#595959] font-light mb-2">
+                Téléphone
+              </label>
+              <Input
+                name="phone"
+                type="text"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+                placeholder="+225 XX XX XX XX"
+                className={`w-full h-[42px] rounded-xl bg-white border ${formErrors.phone ? 'border-red-500' : 'border-[#D8D8D8]'} px-4 text-[13px] placeholder-gray-400`}
+              />
+              {formErrors.phone && <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>}
+            </div>
+            <div>
+              <label className="block text-sm text-[#595959] font-light mb-2">
+                Email
+              </label>
+              <Input
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                placeholder="email@restaurant.com"
+                className={`w-full h-[42px] rounded-xl bg-white border ${formErrors.email ? 'border-red-500' : 'border-[#D8D8D8]'} px-4 text-[13px] placeholder-gray-400`}
+              />
+              {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
+            </div>
+
+            {/* Actif/Inactif */}
+            <div className="mt-3 w-full">
+              <div className='flex items-center justify-between bg-gray-50 p-3 rounded-lg'>
+                <span className="text-sm font-medium text-gray-700">Restaurant actif</span>
+                <Toggle 
+                  checked={formData.active || false} 
+                  onChange={(checked) => handleToggleChange('active', checked)}
+              />
+            </div>
+          </div>
+          </div>
       
         </div>
       </div>

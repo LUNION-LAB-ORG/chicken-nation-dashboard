@@ -25,7 +25,7 @@ export default function CategoriesTable({
   onDelete, 
   onCreateCategory,
   onRefresh,
-  isLoading = false 
+  isLoading = false,
 }: CategoriesTableProps) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 

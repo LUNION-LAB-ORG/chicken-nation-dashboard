@@ -10,10 +10,9 @@
   },
   "dependencies": {
     "@next/font": "^14.2.15",
-    "axios": "^1.9.0",
-    "better-auth": "^1.2.7",
+    "@react-google-maps/api": "^2.20.6",
+    "axios": "^1.8.4",
     "clsx": "^2.1.1",
-    "cookies-next": "^5.1.0",
     "formidable": "^3.5.3",
     "framer-motion": "^12.5.0",
     "jwt-decode": "^4.0.0",

@@ -6,6 +6,7 @@ export interface Product {
   quantity: number;
   totalValue: number;
   description?: string;
+  available?: boolean;
 }
 
 export interface Category {

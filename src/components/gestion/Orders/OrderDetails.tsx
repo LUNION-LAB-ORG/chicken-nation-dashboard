@@ -24,6 +24,9 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
+        console.log('[OrderDetails] Début de la récupération des détails de la commande');
+        console.log('[OrderDetails] Token actuel:', localStorage.getItem('chicken-nation-auth'));
+        
         const freshOrderDetails = await fetchOrderById(order.id);
         
         if (freshOrderDetails) {
@@ -33,9 +36,10 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
           
           // Récupérer immédiatement le nom du restaurant
           if (freshOrderDetails.restaurant_id) {
+            console.log('[OrderDetails] Récupération du restaurant:', freshOrderDetails.restaurant_id);
             getRestaurantById(freshOrderDetails.restaurant_id)
               .then(resto => {
-                console.log('Restaurant récupéré directement:', resto);
+                console.log('[OrderDetails] Restaurant récupéré:', resto);
                 if (resto && resto.name) {
                   setRestaurantName(resto.name);
                 } else {
@@ -43,11 +47,12 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
                 }
               })
               .catch(error => {
-                console.error('Erreur lors de la récupération directe du restaurant:', error);
+                console.error('[OrderDetails] Erreur lors de la récupération du restaurant:', error);
                 setRestaurantName(freshOrderDetails.restaurant_id);
               });
           }
         } else {
+          console.log('[OrderDetails] Pas de données fraîches, utilisation du store');
           // Fallback sur getOrderById si fetchOrderById échoue
           const orderDetails = getOrderById(order.id);
           if (orderDetails) {
@@ -57,9 +62,10 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
             
             // Récupérer immédiatement le nom du restaurant
             if (orderDetails.restaurant_id) {
+              console.log('[OrderDetails] Récupération du restaurant depuis le store:', orderDetails.restaurant_id);
               getRestaurantById(orderDetails.restaurant_id)
                 .then(resto => {
-                  console.log('Restaurant récupéré directement:', resto);
+                  console.log('[OrderDetails] Restaurant récupéré depuis le store:', resto);
                   if (resto && resto.name) {
                     setRestaurantName(resto.name);
                   } else {
@@ -67,7 +73,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
                   }
                 })
                 .catch(error => {
-                  console.error('Erreur lors de la récupération directe du restaurant:', error);
+                  console.error('[OrderDetails] Erreur lors de la récupération du restaurant depuis le store:', error);
                   setRestaurantName(orderDetails.restaurant_id);
                 });
             }
@@ -75,15 +81,65 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
         }
       } catch (error) {
         console.error('[OrderDetails] Erreur lors de la récupération des détails de la commande:', error);
+        console.log('[OrderDetails] Token après erreur:', localStorage.getItem('chicken-nation-auth'));
       }
     };
     
     fetchOrderDetails();
   }, [order.id, getOrderById, fetchOrderById]);
 
-  // Fonction pour convertir le statut API en statut UI
+  // Définition de tous les statuts possibles dans l'ordre du workflow
+  const allStatuses: Order['status'][] = [
+    'EN COURS',
+    'EN PRÉPARATION',
+    'PRÊT',
+    'LIVRAISON',
+    'LIVRÉ', 
+    'ANNULÉE'
+  ];
+
+  // Définition des statuts visibles pour les commandes TABLE
+  const visibleTableStatuses: Order['status'][] = [
+    'EN COURS',
+    'PRÊT',
+    'ANNULÉE'
+  ];
+
+  // Définition des statuts visibles pour les commandes PICKUP
+  const visiblePickupStatuses: Order['status'][] = [
+    'EN COURS',
+    'EN PRÉPARATION',
+    'PRÊT',
+    'RÉCUPÉRÉ',
+    'ANNULÉE'
+  ];
+
+  // Fonction pour obtenir les statuts à afficher dans le menu déroulant
+  const getVisibleStatuses = (): Order['status'][] => {
+    if (fullOrderDetails?.type === 'TABLE') {
+      return visibleTableStatuses;
+    }
+    if (fullOrderDetails?.type === 'PICKUP') {
+      return visiblePickupStatuses;
+    }
+    return allStatuses;
+  };
+
+  // Fonction pour traduire le statut API en statut UI
   const convertApiStatusToUiStatus = (apiStatus: string): Order['status'] => {
-    // Mapping entre les statuts API et les statuts UI
+    if (fullOrderDetails?.type === 'PICKUP') {
+      const pickupStatusMapping: Record<string, Order['status']> = {
+        'PENDING': 'NOUVELLE',
+        'ACCEPTED': 'EN COURS',
+        'IN_PROGRESS': 'EN PRÉPARATION',
+        'PREPARATION': 'EN PRÉPARATION',
+        'READY': 'PRÊT',
+        'COLLECTED': 'RÉCUPÉRÉ',
+        'CANCELLED': 'ANNULÉE'
+      };
+      return pickupStatusMapping[apiStatus] || 'NOUVELLE';
+    }
+
     const statusMapping: Record<string, Order['status']> = {
       'PENDING': 'NOUVELLE',
       'ACCEPTED': 'EN COURS',
@@ -92,7 +148,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
       'READY': 'PRÊT',
       'PICKED_UP': 'LIVRAISON',
       'DELIVERED': 'LIVRÉ',
-      'COLLECTED': 'COLLECTÉ',
+      'COLLECTED': 'RÉCUPÉRÉ',
       'CANCELLED': 'ANNULÉE',
       'COMPLETED': 'LIVRÉ'
     };
@@ -100,8 +156,19 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
     return statusMapping[apiStatus] || 'NOUVELLE';
   };
 
- 
+  // Fonction pour traduire le statut UI en statut API
   const convertUiStatusToApiStatus = (uiStatus: string): OrderStatus => {
+    if (fullOrderDetails?.type === 'PICKUP') {
+      const pickupStatusMapping: Record<string, OrderStatus> = {
+        'NOUVELLE': 'PENDING',
+        'EN COURS': 'ACCEPTED',
+        'EN PRÉPARATION': 'IN_PROGRESS',
+        'PRÊT': 'READY',
+        'RÉCUPÉRÉ': 'COLLECTED',
+        'ANNULÉE': 'CANCELLED'
+      };
+      return pickupStatusMapping[uiStatus] || 'PENDING';
+    }
  
     const statusMapping: Record<string, OrderStatus> = {
       'NOUVELLE': 'PENDING',
@@ -110,81 +177,168 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
       'PRÊT': 'READY',
       'LIVRAISON': 'PICKED_UP',
       'LIVRÉ': 'DELIVERED',
-      'ANNULÉE': 'CANCELLED',
-      'COLLECTÉ': 'COLLECTED'
+      'RÉCUPÉRÉ': 'COLLECTED',
+      'ANNULÉE': 'CANCELLED'
     };
     
     return statusMapping[uiStatus] || 'PENDING';
   };
 
-  // Définition des transitions valides selon le workflow
-  const getValidNextStatuses = (currentStatus: string): Order['status'][] => {
-    const transitions: Record<string, Order['status'][]> = {
-      'NOUVELLE': ['EN COURS', 'ANNULÉE'],
-      'EN COURS': ['EN PRÉPARATION', 'ANNULÉE'],
-      'EN PRÉPARATION': ['PRÊT', 'ANNULÉE'],
-      'PRÊT': ['LIVRAISON', 'ANNULÉE'],
-      'LIVRAISON': ['LIVRÉ', 'COLLECTÉ', 'ANNULÉE'],
-      'LIVRÉ': [],
-      'COLLECTÉ': [],
-      'ANNULÉE': []
-    };
-    
-    return transitions[currentStatus] || [];
+  // Fonction pour obtenir l'index d'un statut dans le workflow
+  const getStatusIndex = (status: Order['status']): number => {
+    return allStatuses.indexOf(status);
   };
-  
-  const getNextRecommendedStatus = (currentStatus: string): Order['status'] | null => {
-    const validStatuses = getValidNextStatuses(currentStatus);
-    // Filtrer ANNULÉE pour ne pas le recommander comme prochain statut
-    const filteredStatuses = validStatuses.filter(status => status !== 'ANNULÉE');
-    return filteredStatuses.length > 0 ? filteredStatuses[0] : null;
-  };
-  
-  // Statut suivant  
-  const nextRecommendedStatus = getNextRecommendedStatus(currentStatus);
 
-  // Définition de tous les statuts possibles dans l'ordre du workflow
-  const allStatuses: Order['status'][] = [
-
-    'EN COURS',
-    'EN PRÉPARATION',
-    'PRÊT',
-    'LIVRAISON',
-    'LIVRÉ', 
-    'ANNULÉE'
-  ];
-  
-  
+  // Fonction pour vérifier si un statut est disponible
   const isStatusAvailable = (status: Order['status'], currentStatusParam: Order['status']): boolean => {
     // Le statut actuel est toujours disponible
     if (status === currentStatusParam) return true;
     
-    // ANNULÉE est toujours disponible sauf si la commande est déjà terminée ou annulée
-    if (status === 'ANNULÉE' && !['LIVRÉ', 'COLLECTÉ', 'ANNULÉE'].includes(currentStatusParam)) {
+    // ANNULÉE est toujours disponible sauf si la commande est déjà annulée
+    if (status === 'ANNULÉE' && currentStatusParam !== 'ANNULÉE') {
       return true;
     }
     
-   
-    return getValidNextStatuses(currentStatusParam).includes(status);
-  };
-  
-  // Déterminer si un statut est le suivant recommandé
-  const isNextRecommendedStatus = (status: Order['status']): boolean => {
-    return status === nextRecommendedStatus;
-  };
-  
-   
-  const isPastStatus = (status: Order['status'], currentStatusParam: Order['status']): boolean => {
-    const currentIndex = allStatuses.indexOf(currentStatusParam);
-    const statusIndex = allStatuses.indexOf(status);
+    // Pour les autres statuts, vérifier si on peut y accéder
+    const currentIndex = getStatusIndex(currentStatusParam);
+    const targetIndex = getStatusIndex(status);
     
-   
-    if (status === 'ANNULÉE') return false;
-    
-   
-    return currentIndex > -1 && statusIndex > -1 && statusIndex < currentIndex;
+    // On ne peut pas revenir en arrière dans le workflow
+    return targetIndex > currentIndex;
   };
 
+  // Fonction pour mettre à jour le statut de la commande
+  const handleStatusChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newStatus = event.target.value as Order['status'];
+    console.log(`[OrderDetails] Changement de statut demandé: ${currentStatus} -> ${newStatus}`);
+    
+    if (newStatus === currentStatus) {
+      console.log(`[OrderDetails] Aucun changement de statut nécessaire`);
+      return;
+    }
+
+    // Mettre à jour l'état local immédiatement pour une meilleure UX
+    setCurrentStatus(newStatus);
+    
+    if (onStatusChange) {
+      console.log(`[OrderDetails] Utilisation de onStatusChange pour mettre à jour le statut`);
+      onStatusChange(order.id, newStatus);
+    } else {
+      console.log(`[OrderDetails] onStatusChange n'existe pas, mise à jour directe via le store`);
+      
+      try {
+        if (fullOrderDetails?.type === 'TABLE') {
+          // Pour les commandes TABLE, gérer la conversion spéciale
+          if (newStatus === 'PRÊT') {
+            // Passer par tous les statuts intermédiaires jusqu'à LIVRÉ
+            const intermediateStatuses = ['IN_PROGRESS', 'READY', 'PICKED_UP', 'DELIVERED'];
+            for (const status of intermediateStatuses) {
+              await updateOrderStatus(order.id, status as OrderStatus);
+            }
+          } else {
+            const apiStatus = convertUiStatusToApiStatus(newStatus);
+            await updateOrderStatus(order.id, apiStatus);
+          }
+        } else if (fullOrderDetails?.type === 'PICKUP') {
+          // Pour les commandes PICKUP
+          if (newStatus === 'PRÊT') {
+            // Passer par tous les statuts intermédiaires jusqu'à COLLECTED
+            const intermediateStatuses = ['IN_PROGRESS', 'READY', 'COLLECTED'];
+            for (const status of intermediateStatuses) {
+              await updateOrderStatus(order.id, status as OrderStatus);
+            }
+          } else if (newStatus === 'RÉCUPÉRÉ') {
+            // Pour RÉCUPÉRÉ, utiliser COLLECTED
+            await updateOrderStatus(order.id, 'COLLECTED');
+          } else {
+            const apiStatus = convertUiStatusToApiStatus(newStatus);
+            await updateOrderStatus(order.id, apiStatus);
+          }
+        } else {
+          // Pour les autres types de commandes, utiliser la logique normale
+          const currentIndex = getStatusIndex(currentStatus);
+          const targetIndex = getStatusIndex(newStatus);
+          
+          if (targetIndex > currentIndex) {
+            for (let i = currentIndex + 1; i <= targetIndex; i++) {
+              const intermediateStatus = allStatuses[i];
+              const apiStatus = convertUiStatusToApiStatus(intermediateStatus);
+              await updateOrderStatus(order.id, apiStatus);
+            }
+          } else if (newStatus === 'ANNULÉE') {
+            const apiStatus = convertUiStatusToApiStatus('ANNULÉE');
+            await updateOrderStatus(order.id, apiStatus);
+          }
+        }
+        
+        console.log(`[OrderDetails] Statut mis à jour avec succès`);
+        
+        toast.success(`Statut de la commande mis à jour avec succès`, {
+          duration: 3000,
+          position: 'top-center',
+        });
+        
+        await fetchOrderById(order.id);
+        console.log(`[OrderDetails] Données de commande rafraîchies`);
+      } catch (error: any) {
+        console.log(`[OrderDetails] Erreur lors de la mise à jour du statut:`, error);
+        
+        // Récupérer le statut actuel depuis le serveur
+        await fetchOrderById(order.id);
+        const updatedOrder = getOrderById(order.id);
+        if (updatedOrder) {
+          const currentApiStatus = updatedOrder.status;
+          const currentUiStatus = convertApiStatusToUiStatus(currentApiStatus);
+          setCurrentStatus(currentUiStatus);
+          console.log(`[OrderDetails] Statut rétabli à: ${currentUiStatus}`);
+        }
+        
+        toast.error(`Erreur lors de la mise à jour du statut: ${error.message || 'Erreur inconnue'}`, {
+          duration: 3000,
+          position: 'top-center',
+        });
+      }
+    }
+  };
+
+  // Fonction pour obtenir le titre de la section en fonction du statut
+  const getDeliverySectionTitle = () => {
+    if (fullOrderDetails?.type === 'PICKUP') {
+      switch (currentStatus) {
+        case 'PRÊT':
+          return 'Prêt à récupérer';
+        case 'RÉCUPÉRÉ':
+          return 'Récupéré';
+        case 'EN COURS':
+          return 'En cours de préparation';
+        case 'EN PRÉPARATION':
+          return 'En préparation';
+        case 'ANNULÉE':
+          return 'Annulée';
+        default:
+          return 'Suivi de la commande';
+      }
+    }
+    
+    switch (currentStatus) {
+      case 'LIVRAISON':
+        return 'En livraison';
+      case 'LIVRÉ':
+        return 'Livré';
+      case 'RÉCUPÉRÉ':
+        return 'Récupéré';
+      case 'PRÊT':
+        return 'Prêt à emporter';
+      case 'EN COURS':
+        return 'En cours de préparation';
+      case 'EN PRÉPARATION':
+        return 'En préparation';
+      case 'ANNULÉE':
+        return 'Annulée';
+      default:
+        return 'Suivi de la commande';
+    }
+  };
    
   const orderType = fullOrderDetails?.type === 'DELIVERY' ? 'À livrer' : (fullOrderDetails?.type === 'TABLE' ? 'Sur place' : (fullOrderDetails?.type ?? 'À livrer'));
   console.log('[OrderDetails] Type de commande:', orderType, 'Type original:', fullOrderDetails?.type);
@@ -299,7 +453,6 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
 
    
   const getProgressStyles = () => {
- 
     const styles = {
       // Étape 1 - Restaurant
       step1Border: 'border-[#F17922]',
@@ -322,6 +475,19 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
       step3Bg: 'bg-white',
       step3Icon: '/icons/location-outline.png',
     };
+    
+    // Pour les commandes TABLE, si le statut est PRÊT, tout est complété
+    if (fullOrderDetails?.type === 'TABLE' && currentStatus === 'PRÊT') {
+      styles.step1Bg = 'bg-[#F17922]';
+      styles.step1Icon = '/icons/poulet-blanc.png';
+      styles.line1 = 'bg-[#F17922]';
+      styles.step2Bg = 'bg-[#F17922]';
+      styles.step2Icon = '/icons/package.png';
+      styles.line2 = 'bg-[#F17922]';
+      styles.step3Bg = 'bg-[#F17922]';
+      styles.step3Icon = '/icons/location_white.png';
+      return styles;
+    }
     
     // Statut ACCEPTÉE ou EN PRÉPARATION - Restaurant actif
     if (currentStatus === 'EN COURS' || currentStatus === 'EN PRÉPARATION') {
@@ -375,144 +541,6 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
     return styles;
   };
 
-  // Fonction pour mettre à jour le statut de la commande
-  const handleStatusChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const newStatus = event.target.value as Order['status'];
-    console.log(`[OrderDetails] Changement de statut demandé: ${currentStatus} -> ${newStatus}`);
-    
-    if (newStatus === currentStatus) {
-      console.log(`[OrderDetails] Aucun changement de statut nécessaire`);
-      return;
-    }
-    
-    // Mettre à jour l'état local immédiatement pour une meilleure UX
-    setCurrentStatus(newStatus);
-    
-    if (onStatusChange) {
-      console.log(`[OrderDetails] Utilisation de onStatusChange pour mettre à jour le statut`);
-      onStatusChange(order.id, newStatus);
-    } else {
-      console.log(`[OrderDetails] onStatusChange n'existe pas, mise à jour directe via le store`);
-      
-      // Convertir le statut UI en statut API
-      const apiStatus = convertUiStatusToApiStatus(newStatus);
-      console.log(`[OrderDetails] Statut converti pour l'API: ${apiStatus}`);
-      
-      // Vérifier si la transition de statut est valide
-      try {
-        console.log(`[OrderDetails] Tentative de mise à jour du statut via updateOrderStatus`);
-        await updateOrderStatus(order.id, apiStatus);
-        console.log(`[OrderDetails] Statut mis à jour avec succès`);
-        
-        // Afficher un toast de succès
-        toast.success(`Statut de la commande mis à jour avec succès`, {
-          duration: 3000,
-          position: 'top-center',
-        });
-        
-        // Récupérer les nouvelles données de commande pour mettre à jour l'affichage
-        await fetchOrderById(order.id);
-        console.log(`[OrderDetails] Données de commande rafraîchies`);
-      } catch (error: any) {
-        console.log(`[OrderDetails] Erreur lors de la mise à jour du statut:`, error);
-        
-        // Récupérer le statut actuel depuis le serveur
-        await fetchOrderById(order.id);
-        const updatedOrder = getOrderById(order.id);
-        if (updatedOrder) {
-          const currentApiStatus = updatedOrder.status;
-          const currentUiStatus = convertApiStatusToUiStatus(currentApiStatus);
-          setCurrentStatus(currentUiStatus);
-          console.log(`[OrderDetails] Statut rétabli à: ${currentUiStatus}`);
-        }
-        
-        // Gérer l'erreur 409 (Conflict) - Transition de statut invalide
-        if (error.status === 409) {
-          console.log(`[OrderDetails] Erreur 409: Transition de statut invalide`);
-          
-          // Récupérer le statut suivant valide depuis le message d'erreur
-          const nextStatus = error.nextStatus;
-          console.log(`[OrderDetails] Proposition de passer d'abord à ${nextStatus}`);
-          
-          // Convertir le statut API en statut UI pour l'affichage
-          const nextUiStatus = convertApiStatusToUiStatus(nextStatus) as Order['status'];
-          
-          // Message spécifique selon la transition tenue
-          let errorMessage = "";
-          
-          // Cas spécifiques pour des messages plus clairs
-          if (currentStatus === 'PRÊT' && newStatus === 'EN PRÉPARATION') {
-            errorMessage = `Impossible de revenir en arrière : une commande PRÊT ne peut pas revenir à EN PRÉPARATION.`;
-          } 
-          else if (currentStatus === 'LIVRÉ' || currentStatus === 'COLLECTÉ') {
-            errorMessage = `Impossible de modifier le statut d'une commande déjà LIVRÉE ou COLLECTÉE.`;
-          }
-          else if (currentStatus === 'ANNULÉE') {
-            errorMessage = `Impossible de modifier le statut d'une commande ANNULÉE.`;
-          }
-          else if (newStatus === 'PRÊT' && currentStatus === 'NOUVELLE') {
-            errorMessage = `Vous devez d'abord accepter la commande (EN COURS) puis la mettre en préparation (EN PRÉPARATION) avant de la marquer comme PRÊT.`;
-          }
-          else if (newStatus === 'LIVRAISON' && currentStatus !== 'PRÊT') {
-            errorMessage = `La commande doit être PRÊT avant de pouvoir être mise en LIVRAISON.`;
-          }
-          else {
-            // Message générique pour les autres cas
-            errorMessage = `Ordre des statuts incorrect : vous ne pouvez pas passer directement de "${currentStatus}" à "${newStatus}".`;
-            
-           
-            if (nextUiStatus) {
-              errorMessage += ` Vous devez d'abord passer par "${nextUiStatus}".`;
-            }
-          }
-          
-          // Afficher le toast avec le message adapté
-          toast.error(errorMessage, {
-            duration: 5000,
-            position: 'top-center',
-            style: {
-              borderRadius: '10px',
-              background: '#333',
-              color: '#fff',
-              padding: '16px',
-              maxWidth: '500px',
-              fontSize: '14px',
-            },
-          });
-          
-          // Revenir au statut actuel
-          setCurrentStatus(currentStatus);
-        } else {
-          // Afficher un message d'erreur générique pour les autres erreurs
-          toast.error(`Erreur lors de la mise à jour du statut: ${error.message || 'Erreur inconnue'}`, {
-            duration: 3000,
-            position: 'top-center',
-          });
-        }
-      }
-    }
-  };
-
-  // Fonction pour obtenir le titre de la section en fonction du statut
-  const getDeliverySectionTitle = () => {
-    switch (currentStatus) {
-      case 'LIVRAISON':
-        return 'Livraison';
-      case 'LIVRÉ':
-        return 'Livré';
-      case 'COLLECTÉ':
-        return 'Collecté';
-      case 'PRÊT':
-        return 'Prêt à emporter';
-      case 'EN COURS':
-        return 'En préparation';
-      case 'ANNULÉE':
-        return 'Annulée';
-      default:
-        return 'Suivi';
-    }
-  };
-
   return (
     <div className="bg-white rounded-xl h-screen overflow-hidden shadow-sm">
       <div className="">
@@ -534,23 +562,17 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
                     onChange={handleStatusChange}
                     className="border border-[#F17922] text-[#F17922] text-xs w-50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#F17922] cursor-pointer"
                   >
-                    {/* Afficher tous les statuts avec des styles différents selon leur disponibilité */}
-                    {allStatuses.map((status) => {
+                    {/* Afficher les statuts visibles avec des styles différents selon leur disponibilité */}
+                    {getVisibleStatuses().map((status) => {
                       const isAvailable = isStatusAvailable(status, currentStatus as Order['status']);
-                      const isRecommended = isNextRecommendedStatus(status);
-                      const isPast = isPastStatus(status, currentStatus as Order['status']);
                       
                       // Déterminer la classe CSS en fonction de l'état du statut
                       let optionClass = '';
                       
                       if (status === currentStatus) {
                         optionClass = 'font-bold text-[#F17922]';
-                      } else if (isRecommended) {
-                        optionClass = 'font-bold bg-[#FFF9F2] text-[#F17922]';
                       } else if (isAvailable) {
                         optionClass = 'text-[#F17922]';
-                      } else if (isPast) {
-                        optionClass = 'text-gray-400 italic';
                       } else {
                         optionClass = 'text-gray-300';
                       }
@@ -563,9 +585,6 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
                           className={optionClass}
                         >
                           {status} 
-                          {isRecommended ? '     (Suivant)' : ''}
-                          {!isAvailable ? '  ' : ''}
-                          {isPast ? ' (Déjà passé)' : ''}
                         </option>
                       );
                     })}

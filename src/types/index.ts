@@ -1,4 +1,3 @@
- 
 export interface Category {
   id: string;
   name: string;
@@ -176,7 +175,6 @@ export interface User {
   lastLogin: string;
 }
 
- 
 interface SupplementItem {
   id: string;
   name: string;
@@ -198,7 +196,6 @@ export interface MenuItem {
   restaurant: string;
   restaurantId: string | string[];
   price: string;
-  rating: number;
   categoryId: string;
   category_id?: string;
   category?: {
@@ -223,10 +220,7 @@ export interface MenuItem {
   };
   reviews: string[];
   totalReviews: number;
-  discountedPrice?: string;
-  originalPrice?: string;
-  isPromotion?: boolean;
-  is_promotion?: boolean;
+  is_promotion: boolean;
   promotion_price?: number | string;
   dish_restaurants?: Array<{
     id?: string;

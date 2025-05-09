@@ -1,6 +1,7 @@
 import Image from "next/image"
 import { MenuItem as MenuItemType } from "@/types"
-import { Mail } from "lucide-react"
+import { Mail } from "lucide-react" 
+import { formatImageUrl } from "@/utils/imageHelpers"
 
 interface DetailsMenuProps {
   menu: MenuItemType
@@ -14,10 +15,17 @@ export default function DetailsMenu({ menu, onClose, onEdit }: DetailsMenuProps)
     if (!menu.dish_supplements || !Array.isArray(menu.dish_supplements)) {
       return [];
     }
+
     
     return menu.dish_supplements.filter(item => 
       item.supplement && item.supplement.category === category
     );
+  };
+
+  const getSafeImageUrl = (imageUrl: string | null): string => {
+    if (!imageUrl) return '/images/burger.png';
+    if (imageUrl.startsWith('data:')) return imageUrl;
+    return formatImageUrl(imageUrl);
   };
 
   //  les ingrédients (catégorie ACCESSORY)
@@ -33,7 +41,7 @@ export default function DetailsMenu({ menu, onClose, onEdit }: DetailsMenuProps)
       <div className="relative w-full h-[200px] xs:h-[300px] sm:h-[400px] lg:h-[530px] p-2 xs:p-3 sm:p-4 lg:p-6">
         <div className="relative w-full h-full">
           <Image
-            src="/images/menudetail.png"
+            src={getSafeImageUrl(menu.image)}
             alt={menu.name}
             className="w-full h-full object-contain sm:object-cover rounded-xl sm:rounded-2xl border border-orange-300"
             width={600}
@@ -85,11 +93,7 @@ export default function DetailsMenu({ menu, onClose, onEdit }: DetailsMenuProps)
               </div>
               <div className="space-y-1 text-sm sm:text-base lg:text-lg text-gray-600">
                 <p>{menu.description}</p>
-                {ingredients && ingredients.map((ingredient, index) => (
-                  ingredient.supplement && (
-                    <p key={ingredient.supplement.id || index}>{ingredient.supplement.name}</p>
-                  )
-                ))}
+             
               </div>
             </div>
 
