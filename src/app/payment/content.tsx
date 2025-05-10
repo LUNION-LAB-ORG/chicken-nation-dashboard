@@ -1,6 +1,7 @@
 "use client";
 import { createPaiement } from "@/services/paiement.action";
 import { useKKiaPay } from "kkiapay-react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 import useGetDataPaiement from "./components/useGetDataPaiement";
 import ErrorPage from "./components/errorPage";
@@ -21,10 +22,9 @@ export default function Content({
 }) {
   const { openKkiapayWidget, addKkiapayListener, removeKkiapayListener } =
     useKKiaPay();
-
+  const router = useRouter();
   // Récupérer les données dans l'url
   const { amount, phone, name, email, orderId, isValid } = useGetDataPaiement();
-  console.log({ amount, phone, name, email, orderId, isValid });
 
   function open() {
     openKkiapayWidget({
@@ -41,13 +41,11 @@ export default function Content({
   // Gestionnaire de la réponse du portail de paiement
   const handlerPaiement = useCallback(
     async (response: ResponseKkiaPay) => {
-      console.log(response);
-
       // Vérification et création du paiement côté backend
       const res = await createPaiement({
         transactionId: response.transactionId,
-        reason: response?.reason,
-        orderId,
+        reason: response?.reason ?? undefined,
+        orderId: orderId ?? undefined,
       });
 
       if (res.success) {
@@ -55,8 +53,9 @@ export default function Content({
       } else {
         console.error("Erreur lors de la synchronisation du paiement");
       }
+      router.push("/payment/thank-you");
     },
-    [orderId]
+    [orderId, router]
   );
 
   useEffect(() => {

@@ -25,7 +25,7 @@ export const createPaiement = async (formData: PaiementDto): Promise<{
     });
 
     const data = await res.json();
-    console.log(data);
+
     return {
         success: data.success,
         message: data.message,
