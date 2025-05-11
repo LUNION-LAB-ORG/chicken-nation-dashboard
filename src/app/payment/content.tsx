@@ -47,13 +47,15 @@ export default function Content({
         reason: response?.reason ?? undefined,
         orderId: orderId ?? undefined,
       });
-
-      if (res.success) {
-        console.log("Paiement synchronisé avec succès");
-      } else {
-        console.error("Erreur lors de la synchronisation du paiement");
-      }
-      router.push("/payment/thank-you");
+      router.push(
+        `/payment/thank-you?transactionId=${
+          res.paiement?.reference ?? ""
+        }&total=${res.paiement?.total ?? ""}&mode=${
+          res.paiement?.mode ?? ""
+        }&source=${res.paiement?.source ?? ""}&reason=${
+          res.paiement?.failure_message ?? ""
+        }&status=${res.paiement?.status ?? ""}`
+      );
     },
     [orderId, router]
   );
