@@ -87,7 +87,7 @@ export default function ThankYouPage() {
         <div className="flex flex-col gap-2 items-center">
           <button
             onClick={() => router.push("https://chicken-nation.com/")}
-            className="w-full py-3 bg-[#ECECEC] text-[#F17922] rounded-xl font-medium hover:bg-[#f17922]/90 transition"
+            className="w-full py-3 bg-[#ECECEC] text-[#F17922] rounded-xl font-medium hover:bg-[#f17922]/90 hover:text-white transition"
           >
             {"Découvrir Chicken-Nation"}
           </button>
