@@ -31,6 +31,9 @@ export interface SupplementItem {
 }
 
 export const formatMenuFromApi = (apiMenu: any): MenuItem => {
+  // Récupérer l'URL de l'image brute pour la stocker séparément
+  const imageUrl = apiMenu.image_url || apiMenu.image || null;
+  
   return {
     id: apiMenu.id || '',
     name: apiMenu.name || '',
@@ -43,6 +46,7 @@ export const formatMenuFromApi = (apiMenu: any): MenuItem => {
     isNew: apiMenu.is_new || false,
     ingredients: apiMenu.ingredients || [],
     image: formatImageUrl(apiMenu.image),
+    imageUrl: imageUrl, // Stocker l'URL brute de l'image pour les mises à jour futures
     supplements: apiMenu.supplements || {},
     reviews: apiMenu.reviews || [],
     totalReviews: apiMenu.total_reviews || 0,
@@ -104,13 +108,31 @@ export const getMenuById = async (id: string): Promise<any> => {
 // Créer un nouveau menu
 export const createMenu = async (menuData: FormData): Promise<MenuItem> => {
   try {
-     const result = await apiRequest<any>(
+    console.log('Création d\'un nouveau plat avec FormData');
+    
+    // Afficher le contenu du FormData pour le débogage
+    const formDataEntries: {[key: string]: any} = {};
+    menuData.forEach((value, key) => {
+      if (formDataEntries[key]) {
+        if (Array.isArray(formDataEntries[key])) {
+          formDataEntries[key].push(value);
+        } else {
+          formDataEntries[key] = [formDataEntries[key], value];
+        }
+      } else {
+        formDataEntries[key] = value;
+      }
+    });
+    console.log('Contenu du FormData:', formDataEntries);
+    
+    const result = await apiRequest<any>(
       '/dishes',  
       'POST',
       menuData
     );
     
     const menuResult = result.data || result;
+    console.log('Plat créé avec succès:', menuResult);
     
     return formatMenuFromApi(menuResult);
   } catch (error) {
@@ -121,15 +143,50 @@ export const createMenu = async (menuData: FormData): Promise<MenuItem> => {
 
 export const updateMenu = async (id: string, menuData: FormData): Promise<MenuItem> => {
   try {
-     const result = await apiRequest<any>(
-      `/dishes/${id}`,  
-      'PATCH',
-      menuData,
-      true  
-    );
+    console.log(`Mise à jour du plat ${id} avec FormData`);
     
-    const menuResult = result.data || result;
-    return formatMenuFromApi(menuResult);
+    // Vérifier si une image est présente dans le FormData
+    let hasImage = false;
+    menuData.forEach((value, key) => {
+      if (key === 'image' && value instanceof File && value.size > 0) {
+        hasImage = true;
+      }
+    });
+    
+    // Si aucune image n'est fournie, récupérer l'image existante
+    if (!hasImage) {
+      try {
+        const existingDish = await getMenuById(id);
+        if (existingDish.image_url) {
+          // Créer un nouveau FormData avec l'image existante
+          const newFormData = new FormData();
+          menuData.forEach((value, key) => {
+            newFormData.append(key, value);
+          });
+          newFormData.append('image_url', existingDish.image_url);
+          menuData = newFormData;
+          console.log('Image existante ajoutée au FormData:', existingDish.image_url);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération de l\'image existante:', error);
+      }
+    }
+    
+    // Approche DELETE/CREATE qui fonctionne
+    try {
+      // Supprimer le plat existant
+      await deleteMenu(id);
+      console.log('Plat supprimé avec succès');
+      
+      // Créer un nouveau plat avec les données mises à jour
+      const newDish = await createMenu(menuData);
+      console.log('Nouveau plat créé avec succès:', newDish);
+      
+      return newDish;
+    } catch (error) {
+      console.error('Erreur lors de la suppression/recréation:', error);
+      throw new Error('Impossible de mettre à jour le plat. Veuillez réessayer plus tard.');
+    }
   } catch (error) {
     console.error('Erreur lors de la mise à jour du menu:', error);
     throw error;
@@ -137,9 +194,16 @@ export const updateMenu = async (id: string, menuData: FormData): Promise<MenuIt
 };
 
 export const menuToFormData = (menu: MenuItem): FormData => {
+  console.log('menuToFormData - Données reçues:', {
+    name: menu.name,
+    image: typeof menu.image === 'object' ? 'File Object' : menu.image,
+    imageUrl: menu.imageUrl
+  });
+  
   const formData = new FormData();
   
-   formData.append('name', menu.name);
+  // Informations de base
+  formData.append('name', menu.name);
   formData.append('description', menu.description || '');
   formData.append('price', menu.price.toString());
   formData.append('category_id', menu.categoryId);
@@ -148,18 +212,99 @@ export const menuToFormData = (menu: MenuItem): FormData => {
   if (menu.image && typeof menu.image === 'object') {
     // Si c'est un objet File
     formData.append('image', menu.image as any);
-  } else if (menu.image && typeof menu.image === 'string' && menu.image.startsWith('data:image')) {
-    // Convertir l'image base64 en Blob
-    const blob = dataURLtoBlob(menu.image);
-    formData.append('image', blob, 'image.jpg');
+    console.log('Envoi d\'une nouvelle image (objet File)');
+  } else if (menu.image && typeof menu.image === 'string') {
+    if (menu.image.startsWith('data:image')) {
+      // Convertir l'image base64 en Blob
+      const blob = dataURLtoBlob(menu.image);
+      formData.append('image', blob, 'image.jpg');
+      console.log('Envoi d\'une nouvelle image (base64 convertie en Blob)');
+    } else if (menu.image.startsWith('http')) {
+      // Si c'est une URL directe (cas d'une image existante)
+      formData.append('image_url', menu.image);
+      console.log('Préservation de l\'image existante via URL directe:', menu.image);
+    } else {
+      // Autre type de chaîne, peut-être un chemin relatif
+      console.log('Image sous forme de chaîne non reconnue:', menu.image);
+      if (menu.imageUrl) {
+        formData.append('image_url', menu.imageUrl);
+        console.log('Utilisation de imageUrl comme fallback:', menu.imageUrl);
+      }
+    }
+  } else if (menu.imageUrl) {
+    // Cas où menu.image est null/undefined mais nous avons une URL d'image existante
+    formData.append('image_url', menu.imageUrl);
+    console.log('Préservation de l\'image existante via imageUrl:', menu.imageUrl);
+  } else {
+    console.log('Aucune image fournie pour ce plat');
   }
   
-   if (menu.is_promotion) {
-    formData.append('is_promotion', 'true');
-    if (menu.promotion_price) {
-      formData.append('promotion_price', menu.promotion_price);
-    }
+  // Gérer les promotions - IMPORTANT: Toujours envoyer is_promotion et promotion_price
+  formData.append('is_promotion', menu.is_promotion ? 'true' : 'false');
+  if (menu.is_promotion && menu.promotion_price) {
+    formData.append('promotion_price', menu.promotion_price.toString());
+  } else {
+    formData.append('promotion_price', '0');
   }
+  
+  // Gérer les restaurants - IMPORTANT: Ajouter chaque ID séparément
+  if (Array.isArray(menu.restaurantId)) {
+    menu.restaurantId.forEach(id => {
+      if (id) formData.append('restaurant_ids', id);
+    });
+  } else if (menu.restaurantId) {
+    formData.append('restaurant_ids', menu.restaurantId);
+  }
+  
+  // Gérer les suppléments - IMPORTANT: Éviter les doublons
+  // Créer un Set pour stocker les IDs uniques des suppléments
+  const supplementIds = new Set<string>();
+  
+  // Collecter tous les IDs de suppléments depuis les différentes sources
+  // 1. Depuis supplements.ACCESSORY
+  if (menu.supplements?.ACCESSORY) {
+    menu.supplements.ACCESSORY.forEach(supp => {
+      if (supp.id) supplementIds.add(supp.id);
+    });
+  }
+  
+  // 2. Depuis supplements.FOOD
+  if (menu.supplements?.FOOD) {
+    menu.supplements.FOOD.forEach(supp => {
+      if (supp.id) supplementIds.add(supp.id);
+    });
+  }
+  
+  // 3. Depuis supplements.DRINK
+  if (menu.supplements?.DRINK) {
+    menu.supplements.DRINK.forEach(supp => {
+      if (supp.id) supplementIds.add(supp.id);
+    });
+  }
+  
+  // 4. Depuis dish_supplements (si présent et non déjà traité)
+  if (menu.dish_supplements && Array.isArray(menu.dish_supplements)) {
+    menu.dish_supplements.forEach(supp => {
+      if (supp.supplement_id) {
+        supplementIds.add(supp.supplement_id);
+      }
+    });
+  }
+  
+  // Ajouter les IDs uniques au FormData
+  supplementIds.forEach(id => {
+    formData.append('supplement_ids', id);
+  });
+  
+  console.log('FormData créé pour le menu:', {
+    name: menu.name,
+    restaurants: Array.isArray(menu.restaurantId) ? menu.restaurantId : [menu.restaurantId],
+    supplements: {
+      count: supplementIds.size,
+      ids: Array.from(supplementIds)
+    },
+    promotion: { is_promotion: menu.is_promotion, price: menu.promotion_price }
+  });
   
   return formData;
 };

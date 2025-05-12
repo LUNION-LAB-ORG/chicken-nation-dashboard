@@ -209,6 +209,7 @@ export interface MenuItem {
   isNew?: boolean;
   ingredients?: string[];
   image: string;
+  imageUrl?: string;
   supplements: {
     boissons?: SupplementType;
     sauces?: SupplementType;

@@ -17,11 +17,6 @@ import {
   SupplementType,  
 } from '@/utils/supplementHelpers'
 
-const defaultRestaurants = [
-  { value: 'zone4', label: 'Chicken Nation Zone 4' },
-  { value: 'angre', label: 'Chicken Nation Angré' },
-]
-
 interface MenuFormProps {
   initialData?: MenuItem;
   onCancel?: () => void;
@@ -87,7 +82,7 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
   
  
   const [categories, setCategories] = useState<any[]>([]);
-  const [restaurants, setRestaurants] = useState<any[]>(defaultRestaurants);
+  const [restaurants, setRestaurants] = useState<any[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isLoadingRestaurants, setIsLoadingRestaurants] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -259,6 +254,11 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
     const boissons: string[] = [];
     const boissonsQty: Record<string, number> = {};
 
+    // Utiliser des Sets pour éviter les doublons
+    const ingredientSet = new Set<string>();
+    const accompagnementSet = new Set<string>();
+    const boissonSet = new Set<string>();
+
     // Traitement de chaque supplément
     dishSupplements.forEach((item) => {
       const supplementId = item.supplement_id || (item.supplement?.id || '');
@@ -280,30 +280,47 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
 
       switch (type) {
         case 'ACCESSORY':
-          ingredients.push(supplementId);
-          ingredientsQty[supplementId] = quantity;
-          break;
-        case 'FOOD':
-          accompagnements.push(supplementId);
-          accompagnementsQty[supplementId] = quantity;
-          break;
-        case 'DRINK':
-          boissons.push(supplementId);
-          boissonsQty[supplementId] = quantity;
-          break;
-        default:
-          if (ingredientOptions.some(opt => opt.value === supplementId)) {
+          if (!ingredientSet.has(supplementId)) {
+            ingredientSet.add(supplementId);
             ingredients.push(supplementId);
             ingredientsQty[supplementId] = quantity;
-          } else if (accompagnementOptions.some(opt => opt.value === supplementId)) {
+          }
+          break;
+        case 'FOOD':
+          if (!accompagnementSet.has(supplementId)) {
+            accompagnementSet.add(supplementId);
             accompagnements.push(supplementId);
             accompagnementsQty[supplementId] = quantity;
-          } else if (boissonOptions.some(opt => opt.value === supplementId)) {
+          }
+          break;
+        case 'DRINK':
+          if (!boissonSet.has(supplementId)) {
+            boissonSet.add(supplementId);
+            boissons.push(supplementId);
+            boissonsQty[supplementId] = quantity;
+          }
+          break;
+        default:
+          if (ingredientOptions.some(opt => opt.value === supplementId) && !ingredientSet.has(supplementId)) {
+            ingredientSet.add(supplementId);
+            ingredients.push(supplementId);
+            ingredientsQty[supplementId] = quantity;
+          } else if (accompagnementOptions.some(opt => opt.value === supplementId) && !accompagnementSet.has(supplementId)) {
+            accompagnementSet.add(supplementId);
+            accompagnements.push(supplementId);
+            accompagnementsQty[supplementId] = quantity;
+          } else if (boissonOptions.some(opt => opt.value === supplementId) && !boissonSet.has(supplementId)) {
+            boissonSet.add(supplementId);
             boissons.push(supplementId);
             boissonsQty[supplementId] = quantity;
           }
       }
     });
+
+    // Limiter à 3 éléments maximum par catégorie
+    const limitedIngredients = ingredients.slice(0, 3);
+    const limitedAccompagnements = accompagnements.slice(0, 3);
+    const limitedBoissons = boissons.slice(0, 3);
 
     // Log unique avec toutes les données
     console.log("=== ÉTAT DES SUPPLÉMENTS ===", {
@@ -315,26 +332,26 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
       },
       supplémentsInitialisés: {
         ingrédients: {
-          ids: ingredients,
+          ids: limitedIngredients,
           quantités: ingredientsQty
         },
         accompagnements: {
-          ids: accompagnements,
+          ids: limitedAccompagnements,
           quantités: accompagnementsQty
         },
         boissons: {
-          ids: boissons,
+          ids: limitedBoissons,
           quantités: boissonsQty
         }
       }
     });
 
-    // Mise à jour des états
-    setSelectedIngredients(ingredients);
+    // Mise à jour des états avec les valeurs limitées
+    setSelectedIngredients(limitedIngredients);
     setIngredientQuantities(ingredientsQty);
-    setSelectedAccompagnements(accompagnements);
+    setSelectedAccompagnements(limitedAccompagnements);
     setAccompagnementQuantities(accompagnementsQty);
-    setSelectedBoissons(boissons);
+    setSelectedBoissons(limitedBoissons);
     setBoissonQuantities(boissonsQty);
   };
 
@@ -490,7 +507,7 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
         })
       ];
 
-      // Log unique pour la soumission
+      // Log détaillé pour la soumission
       console.log("=== SOUMISSION DU FORMULAIRE ===", {
         données: {
           id: initialData?.id || '',
@@ -524,11 +541,16 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
         categoryId: formData.category[0],
         price: formData.price,
         description: formData.description,
-        image: getSafeImageUrl(imagePreview),
+        // Gestion simplifiée de l'image
+        image: imagePreview ? getSafeImageUrl(imagePreview) : '',
+        // Si pas de nouvelle image et qu'on est en mode édition, utiliser l'URL existante
+        imageUrl: !imagePreview && initialData ? (initialData.imageUrl || initialData.image) : '',
         isAvailable: true,
         isNew: false,
         restaurant: '',
-        restaurantId: selectedRestaurants.length > 0 ? selectedRestaurants : formData.restaurant,
+        // S'assurer que restaurantId est toujours un tableau
+        restaurantId: selectedRestaurants.length > 0 ? selectedRestaurants : 
+                     (formData.restaurant ? [formData.restaurant] : []),
         rating: 0,
         supplements: {
           ACCESSORY: selectedIngredients.map(id => {
@@ -561,10 +583,28 @@ const MenuForm = ({ initialData, onCancel, onSubmit, submitLabel = 'Enregistrer'
         },
         reviews: [],
         totalReviews: 0,
-        is_promotion: formData.reduction,
-        promotion_price: formData.reduction ? formData.reducedPrice : undefined,
+        // S'assurer que les valeurs de promotion sont toujours définies
+        is_promotion: formData.reduction === true,
+        promotion_price: formData.reduction ? formData.reducedPrice : '0',
         dish_supplements: dishSupplements
       };
+
+      // Log final des données avant soumission
+      console.log("=== DONNÉES FINALES ENVOYÉES ===", {
+        id: menuData.id,
+        name: menuData.name,
+        categoryId: menuData.categoryId,
+        price: menuData.price,
+        is_promotion: menuData.is_promotion,
+        promotion_price: menuData.promotion_price,
+        restaurantId: menuData.restaurantId,
+        supplements: {
+          ACCESSORY: menuData.supplements.ACCESSORY.length,
+          FOOD: menuData.supplements.FOOD.length,
+          DRINK: menuData.supplements.DRINK.length,
+        },
+        dish_supplements: menuData.dish_supplements.length
+      });
 
       onSubmit(menuData);
     } catch (error) {

@@ -1,9 +1,20 @@
-import React from 'react';
+import { Suspense } from "react";
+import Content from "./content";
+import ErrorPage from "./components/ErrorPage";
+import Loading from "./loading";
 
-const PaymentPage = () => {
-  return <div>
-    <h1>Page de paiement</h1>
-  </div>;
-};
+export default async function PaymentPage() {
+  // Récupération sécurisée des clés
+  const apiKey = process.env.KKIA_PAY_API_KEY ?? "";
+  const sandbox = process.env.KKIA_PAY_SANDBOX;
 
-export default PaymentPage;
+  if (!apiKey || !sandbox) {
+    return <ErrorPage />;
+  }
+
+  return (
+    <Suspense fallback={<Loading />}>
+      <Content apiKey={apiKey} sandbox={sandbox === "true"} />
+    </Suspense>
+  );
+}
