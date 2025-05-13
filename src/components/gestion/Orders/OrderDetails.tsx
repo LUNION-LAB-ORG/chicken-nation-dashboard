@@ -362,7 +362,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
         : 'Client inconnu');
   const customerEmail = fullOrderDetails?.email || fullOrderDetails?.customer?.email || '';
   const customerPhone = fullOrderDetails?.phone || fullOrderDetails?.customer?.phone || '';
-  const customerAddress = fullOrderDetails?.address?.address ?? "Adresse non spécifiée";
+  const customerAddress = fullOrderDetails?.address || "Adresse non spécifiée";
 
   
   const tableNumber = fullOrderDetails?.table_number || '';
@@ -428,8 +428,8 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
     orderDate = 'Date inconnue';
   }
 
-  // Raccourci pour l'ID de commande : ... + 6 derniers caractères
-  const shortOrderId = fullOrderDetails?.id ? `${fullOrderDetails.id.slice(-14)}...` : '';
+  // Remplacer la génération du shortOrderId par la référence
+  const orderReference = fullOrderDetails?.reference || 'Référence non disponible';
 
   // Contenu de la commande : mapping précis des items
   const orderItems = Array.isArray(fullOrderDetails?.order_items) && fullOrderDetails.order_items.length > 0
@@ -541,6 +541,23 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
     return styles;
   };
 
+  // Fonction pour formater l'adresse
+  const formatAddress = (addressString: string) => {
+    try {
+      const addressObj = JSON.parse(addressString);
+      const parts = [];
+      
+      if (addressObj.title) parts.push(addressObj.title);
+      if (addressObj.address || addressObj.road) parts.push(addressObj.address || addressObj.road);
+      if (addressObj.city) parts.push(addressObj.city);
+      if (addressObj.postalCode) parts.push(addressObj.postalCode);
+      
+      return parts.join(', ') || 'Adresse non disponible';
+    } catch {
+      return addressString || 'Adresse non disponible';
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl h-screen overflow-hidden shadow-sm">
       <div className="">
@@ -550,7 +567,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
             {/* En-tête avec informations générales */}
             <div className="mb-6">
               <div className="flex justify-between items-center">
-                <h2 className="xl:text-lg text-sm font-medium text-[#F17922]">Information sur la commande #{shortOrderId}</h2>
+                <h2 className="xl:text-lg text-sm font-medium text-[#F17922]">Information sur la commande <span className="text-xs font-bold ">#{orderReference}</span></h2>
                 <div className="flex items-center space-x-2">
                   {/* <span className="px-3 py-1.5 border-1 border-[#FBD2B5] font-bold text-[#FF3B30] text-[8px] lg:text-xs rounded-lg">
                     {currentStatus}
@@ -612,9 +629,9 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
                   <p className="font-bold text-xs lg:text-sm text-[#71717A]">{orderDate}</p>
                 </div>
                 
-                <div className="flex gap-34  items-center">
-                  <p className="lg:text-sm text-xs font-medium text-[#71717A]">N° Commande</p>
-                  <p className="font-bold text-xs lg:text-sm text-[#71717A]">{shortOrderId}</p>
+                <div className="flex gap-41  items-center">
+                  <p className="lg:text-sm text-xs font-medium text-[#71717A]">Référence</p>
+                  <p className="font-bold text-xs lg:text-sm text-[#71717A]">{orderReference}</p>
                 </div>
                 
                 <div className="flex gap-32  items-center">
@@ -714,9 +731,11 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onAccept, on
               </div>
             
               {/* Adresse */}
-              <div className="flex flex-row justify-between items-start">
+              <div className="flex flex-row justify-between items-start mb-4">
                 <p className="text-sm text-[#71717A]">Adresse</p>
-                <p className="text-sm text-[#71717A] font-bold text-right" dangerouslySetInnerHTML={{ __html: customerAddress }} />
+                <p className="text-sm text-[#71717A] font-bold text-right max-w-[250px]">
+                  {formatAddress(customerAddress)}
+                </p>
               </div>
               {customerEmail && (
                 <div className='flex flex-row items-center justify-between mb-2'>

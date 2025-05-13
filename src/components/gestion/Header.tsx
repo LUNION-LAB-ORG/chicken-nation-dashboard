@@ -2,6 +2,7 @@
 
 import { Search, Menu } from 'lucide-react';
 import Image from 'next/image';
+import { useAuthStore } from '@/store/authStore';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -10,6 +11,8 @@ interface HeaderProps {
 }
 
 export default function Header({ toggleSidebar, isSidebarOpen, className }: HeaderProps) {
+  const { user } = useAuthStore();
+
   return (
     <header className={`bg-white border-b border-gray-200 shadow-3xl ${className}`}>
       <div className="flex items-center h-14">
@@ -35,7 +38,7 @@ export default function Header({ toggleSidebar, isSidebarOpen, className }: Head
 
         {/* Icones  à droite */}
         <div className="flex items-center px-4 space-x-8">
-          <button className="relative">
+          {/* <button className="relative">
             <Image src="/icons/header/notification.png" alt="notification" width={24} height={24} className="text-gray-600" /> 
           </button>
           
@@ -45,18 +48,18 @@ export default function Header({ toggleSidebar, isSidebarOpen, className }: Head
 
           <button className="relative">
             <Image src="/icons/header/setting.png" alt="Settings" width={24} height={24} className="text-gray-600" /> 
-          </button>
+          </button> */}
 
           {/* Menu Utilisateur */}
           <div className="flex items-center pl-2">
             <div className="flex items-center space-x-3">
               <div className="flex items-center">
-                <span className="text-sm text-gray-700">Admin</span> 
+                <span className="text-sm text-gray-700">{user?.fullname || 'Utilisateur'}</span> 
               </div>
               <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden">
                 <Image 
-                  src="/icons/header/default-avatar.png" 
-                  alt="Admin" 
+                  src={user?.image || "/icons/header/default-avatar.png"} 
+                  alt={user?.fullname || "Utilisateur"} 
                   width={24} 
                   height={24} 
                   className="w-full h-full object-cover"

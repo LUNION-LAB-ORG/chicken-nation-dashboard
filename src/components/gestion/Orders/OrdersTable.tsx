@@ -12,6 +12,7 @@ import { OrderStatus, OrderType, updateOrderStatus } from '@/services/orderServi
 // Interface existante pour les commandes (ne pas modifier pour garder l'UI intacte)
 export interface Order {
   id: string
+  reference: string
   clientName: string
   date: string
   status: 'NOUVELLE' | 'EN COURS' | 'EN PRÉPARATION' | 'LIVRÉ' | 'COLLECTÉ' | 'ANNULÉE' | 'LIVRAISON' | 'PRÊT'
@@ -34,6 +35,7 @@ const mapApiOrderToUiOrder = (apiOrder: any): Order => {
   if (!apiOrder || typeof apiOrder !== 'object') {
      return {
       id: 'error',
+      reference: 'REF-ERROR',
       clientName: 'Erreur de données',
       date: new Date().toLocaleDateString('fr-FR'),
       status: 'ANNULÉE',
@@ -143,7 +145,8 @@ const mapApiOrderToUiOrder = (apiOrder: any): Order => {
   
   // Construire et retourner l'objet Order pour l'UI
   return {
-    id: apiOrder.id || apiOrder.reference || 'ID inconnu',
+    id: apiOrder.id || 'ID inconnu',
+    reference: apiOrder.reference || `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(Math.random() * 100000).toString().padStart(5, '0')}`,
     clientName,
     date,
     status: uiStatus,

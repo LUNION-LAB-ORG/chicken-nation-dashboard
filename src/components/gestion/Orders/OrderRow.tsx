@@ -61,16 +61,33 @@ const StatusBadge = ({ status }: { status: Order['status'] }) => {
 const formatAddress = (addressString: string) => {
   try {
     const addressObj = JSON.parse(addressString);
-    const parts = [];
+    // Pour l'affichage court, on ne prend que la ville
+    const shortDisplay = addressObj.city || 'Ville non disponible';
     
-    if (addressObj.title) parts.push(addressObj.title);
-    if (addressObj.street) parts.push(addressObj.street);
-    if (addressObj.city) parts.push(addressObj.city);
+    // Pour le tooltip, on garde l'adresse complète
+    const fullParts = [];
+    if (addressObj.formattedAddress) {
+      return {
+        short: shortDisplay,
+        full: addressObj.formattedAddress
+      };
+    }
     
-    return parts.join(', ');
-  } catch (e) {
+    if (addressObj.title) fullParts.push(addressObj.title);
+    if (addressObj.address || addressObj.road) fullParts.push(addressObj.address || addressObj.road);
+    if (addressObj.city) fullParts.push(addressObj.city);
+    if (addressObj.postalCode) fullParts.push(addressObj.postalCode);
+    
+    return {
+      short: shortDisplay,
+      full: fullParts.join(', ') || 'Adresse non disponible'
+    };
+  } catch {
     // Si l'adresse n'est pas un JSON valide, retourner l'adresse brute
-    return addressString;
+    return {
+      short: addressString.length > 20 ? addressString.substring(0, 20) + '...' : addressString,
+      full: addressString
+    };
   }
 };
 
@@ -140,7 +157,9 @@ export function OrderRow({ order, isSelected, onSelect, onAccept, onReject, onVi
             </div>
             <div className="mb-3">
               <div className="font-medium text-[#71717A]">{order.clientName}</div>
-              <div className="text-xs text-gray-500 truncate">{formatAddress(order.address)}</div>
+              <div className="text-xs text-gray-500 truncate" title={formatAddress(order.address).full}>
+                {formatAddress(order.address).short}
+              </div>
             </div>
             <div className="flex justify-between items-center mb-2">
               <div className="text-sm font-bold text-[#F17922]">{(order.totalPrice || 0).toLocaleString()} F</div>
@@ -188,8 +207,11 @@ export function OrderRow({ order, isSelected, onSelect, onAccept, onReject, onVi
         <OrderTypeBadge type={order.orderType} />
       </td>
       <td className="whitespace-nowrap py-3 px-3 sm:px-4">
-        <span className="text-sm text-gray-500 max-w-[200px] truncate" title={formatAddress(order.address)}>
-          {formatAddress(order.address)}
+        <span 
+          className="text-sm text-gray-500 max-w-[200px] truncate" 
+          title={formatAddress(order.address).full}
+        >
+          {formatAddress(order.address).short}
         </span>
       </td>
       <td className="whitespace-nowrap py-3 px-3 sm:px-4">
