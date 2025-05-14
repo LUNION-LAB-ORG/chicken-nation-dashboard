@@ -4,7 +4,7 @@ import { useKKiaPay } from "kkiapay-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 import useGetDataPaiement from "./components/useGetDataPaiement";
-import ErrorPage from "./components/ErrorPage";
+import ErrorPage from "./components/errorPage";
 
 export interface ResponseKkiaPay {
   transactionId: string;
@@ -41,6 +41,9 @@ export default function Content({
   // Gestionnaire de la réponse du portail de paiement
   const handlerPaiement = useCallback(
     async (response: ResponseKkiaPay) => {
+
+      console.log("Retour Kkiapay",response)
+      console.log("Données",{ amount, phone, name, email, orderId, token, isValid })
       // Vérification et création du paiement côté backend
       const res = await createPaiement({
         transactionId: response.transactionId,
@@ -48,6 +51,8 @@ export default function Content({
         reason: response?.reason ?? undefined,
         orderId: orderId ?? undefined,
       });
+      console.log("Retour",res)
+
       router.push(
         `/payment/thank-you?transactionId=${
           res.paiement?.reference ?? ""
