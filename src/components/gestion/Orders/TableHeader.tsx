@@ -32,7 +32,7 @@ export function TableHeader({ onSelectAll, isAllSelected }: TableHeaderProps) {
               onChange={onSelectAll}
             />
           </th>
-          <th className="whitespace-nowrap py-3 px-3 text-left text-sm font-normal text-gray-600 sm:px-4">Order ID</th>
+          <th className="whitespace-nowrap py-3 px-3 text-left text-sm font-normal text-gray-600 sm:px-4">Référence</th>
           <th className="whitespace-nowrap py-3 px-3 text-left text-sm font-normal text-gray-600 sm:px-4">Date</th>
           <th className="whitespace-nowrap py-3 px-3 text-left text-sm font-normal text-gray-600 sm:px-4">Clients</th>
           <th className="whitespace-nowrap py-3 px-3 text-left text-sm font-normal text-gray-600 sm:px-4">Type de commande</th>

@@ -1,4 +1,11 @@
- 
+export enum EntityStatus {
+  NEW = "NEW",
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
+  BLOCKED = "BLOCKED",
+  DELETED = "DELETED"
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -6,7 +13,7 @@ export interface Category {
   promo?: string;
   image?: string;
 }
- 
+
 export interface Supplement {
   id: string;
   name: string;
@@ -14,13 +21,13 @@ export interface Supplement {
   isAvailable: boolean;
   isSelected?: boolean;
 }
- 
+
 export interface ProductSupplement {
   type: "BOISSONS" | "SAUCES" | "PETITE OU GROSSE FAIM";
   items: Supplement[];
   required?: boolean;
 }
- 
+
 export interface Review {
   id: string;
   userId: string;
@@ -30,7 +37,7 @@ export interface Review {
   date: string;
   likes?: number;
 }
- 
+
 export interface OrderHistory {
   id: string;
   userId: string;
@@ -44,17 +51,17 @@ export interface OrderHistory {
   }[];
   total: string;
   status:
-    | "pending"
-    | "confirmed"
-    | "preparing"
-    | "ready"
-    | "delivered"
-    | "cancelled";
+  | "pending"
+  | "confirmed"
+  | "preparing"
+  | "ready"
+  | "delivered"
+  | "cancelled";
   date: string;
   deliveryAddress?: string;
   paymentMethod: "cash" | "card" | "mobile_money";
 }
- 
+
 export interface Notification {
   id: string;
   userId: string;
@@ -77,7 +84,7 @@ export interface Notification {
     userId?: string;
   };
 }
- 
+
 export interface NotificationSettings {
   orderUpdates: {
     enabled: boolean;
@@ -139,7 +146,7 @@ export interface NotificationSettings {
     };
   };
 }
- 
+
 export interface User {
   id: string;
   firstName: string;
@@ -176,21 +183,20 @@ export interface User {
   lastLogin: string;
 }
 
- 
 interface SupplementItem {
   id: string;
   name: string;
   price: string;
   isAvailable: boolean;
 }
- 
+
 interface SupplementType {
   type: string;
   items: SupplementItem[];
   isIncluded?: boolean;
   required?: boolean;
 }
- 
+
 export interface MenuItem {
   id: string;
   name: string;
@@ -198,7 +204,6 @@ export interface MenuItem {
   restaurant: string;
   restaurantId: string | string[];
   price: string;
-  rating: number;
   categoryId: string;
   category_id?: string;
   category?: {
@@ -212,6 +217,7 @@ export interface MenuItem {
   isNew?: boolean;
   ingredients?: string[];
   image: string;
+  imageUrl?: string;
   supplements: {
     boissons?: SupplementType;
     sauces?: SupplementType;
@@ -223,10 +229,7 @@ export interface MenuItem {
   };
   reviews: string[];
   totalReviews: number;
-  discountedPrice?: string;
-  originalPrice?: string;
-  isPromotion?: boolean;
-  is_promotion?: boolean;
+  is_promotion: boolean;
   promotion_price?: number | string;
   dish_restaurants?: Array<{
     id?: string;
@@ -253,20 +256,20 @@ export interface MenuItem {
     [key: string]: any;
   }>;
 }
- 
+
 export interface Schedule {
   day:
-    | "Lundi"
-    | "Mardi"
-    | "Mercredi"
-    | "Jeudi"
-    | "Vendredi"
-    | "Samedi"
-    | "Dimanche";
+  | "Lundi"
+  | "Mardi"
+  | "Mercredi"
+  | "Jeudi"
+  | "Vendredi"
+  | "Samedi"
+  | "Dimanche";
   openingTime: string;
   closingTime: string;
 }
- 
+
 export interface Restaurant {
   id: string;
   name: string;
@@ -322,7 +325,7 @@ export interface PromoDetails {
   discount: number;
   validUntil: string;
   originalPrices: {
-    [menuId: string]: string;  
+    [menuId: string]: string;
   };
 }
 
@@ -335,7 +338,7 @@ export interface PromoBanner {
   subText: string;
   color?: string;
   offerId: string;
-  menuIds: string[];  
+  menuIds: string[];
   promoDetails: PromoDetails;
 }
 

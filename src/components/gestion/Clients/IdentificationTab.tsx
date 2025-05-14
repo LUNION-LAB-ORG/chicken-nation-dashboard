@@ -118,9 +118,19 @@ export function IdentificationTab({ client, fullName, formatDate }: Identificati
             <span className={`inline-block px-3 py-1.5 text-xs font-light rounded-xl ${
               client.entity_status === 'ACTIVE' 
                 ? 'bg-[#4FCBBA] text-white' 
-                : 'bg-[#FBD2B5] text-slate-700'
+                : client.entity_status === 'NEW'
+                ? 'bg-[#FBD2B5] text-slate-700'
+                : client.entity_status === 'BLOCKED'
+                ? 'bg-red-100 text-red-800'
+                : client.entity_status === 'INACTIVE'
+                ? 'bg-gray-100 text-gray-800'
+                : 'bg-gray-100 text-gray-800'
             }`}>
-              {client.entity_status === 'ACTIVE' ? 'Connecté' : 'Pas connecté'}
+              {client.entity_status === 'ACTIVE' ? 'Connecté' : 
+               client.entity_status === 'NEW' ? 'Nouveau' :
+               client.entity_status === 'BLOCKED' ? 'Bloqué' :
+               client.entity_status === 'INACTIVE' ? 'Inactif' :
+               client.entity_status}
             </span>
           </div>
         </div>

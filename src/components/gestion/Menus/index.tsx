@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MenuHeader from './MenuHeader';
 import BestSellers from './BestSellers';
 import MenuCategories from './MenuCategories';  
@@ -21,7 +21,7 @@ interface MenuState {
   loadingMenu: boolean;
   saving: boolean;
 }
- 
+
 const Menus = () => {
   const [menuState, setMenuState] = useState<MenuState>({
     view: 'list',
@@ -29,12 +29,10 @@ const Menus = () => {
     saving: false
   });
 
-  
   const bestSellers = [...menuItems]
     .sort((a, b) => b.rating - a.rating)
     .slice(0, 5);
 
-  
   const promoMenus = menuItems.filter(item => {
     return item.supplements && 
       Object.values(item.supplements).some(supp => supp.isIncluded) ||
@@ -369,11 +367,11 @@ const Menus = () => {
         {menuState.view === 'list' && (
           <div className='bg-white rounded-xl sm:rounded-2xl overflow-hidden'>
             <BestSellers 
-              menus={[]} 
+              menus={menuItems} 
               onEditMenu={handleEditMenu}
               onViewMenu={handleViewMenu}
             />
-             
+            <div className="border-t border-gray-100 mt-4"></div>
             <MenuCategories 
               categories={menuCategories}
               menuItems={menuItems}

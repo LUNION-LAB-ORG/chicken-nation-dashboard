@@ -6,86 +6,68 @@ import { useRouter } from 'next/navigation';
 import LoginForm from '@/components/auth/LoginForm';
 import AuthHeader from '@/components/auth/AuthHeader';
 import styles from './page.module.css';
+import { useAuthStore } from '@/store/authStore';
 import { LoginCredentials } from '@/types/auth';
-import { authClient, isUserLoggedIn } from '@/lib/auth-client';
 
 /**
  * Page de connexion
+ * Reproduit fidèlement l'écran de connexion de Chicken Nation
  */
 export default function LoginPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, isLoading, isAuthenticated } = useAuthStore();
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   // Vérifier l'état d'authentification au chargement
   useEffect(() => {
+    // Ajouter un délai pour éviter les problèmes de rendu
     const timer = setTimeout(() => {
-      if (isUserLoggedIn()) {
+      // Si l'utilisateur est déjà authentifié, rediriger vers /gestion
+      if (isAuthenticated && !redirecting) {
+        setRedirecting(true);
         router.push('/gestion');
       } else {
+        // Sinon, marquer que la vérification est terminée
         setCheckingAuth(false);
       }
-    }, 300);
+    }, 500);
     
     return () => clearTimeout(timer);
-  }, [router]);
+  }, [isAuthenticated, router, redirecting]);
 
   /**
    * Gère la soumission du formulaire de connexion
    */
   const handleLogin = async (credentials: LoginCredentials) => {
     setLoginError(null);
-    setIsLoading(true);
     
     try {
-      console.log('Tentative de connexion avec:', { email: credentials.email, password: '***' });
-      console.log('URL API:', process.env.NEXT_PUBLIC_API_URL);
+      // Effectuer la connexion via le store qui utilise maintenant notre service d'authentification
+      await login(credentials);
       
-      // Utiliser directement l'API externe au lieu de Better Auth
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: credentials.email, password: credentials.password }),
-        credentials: 'include'
-      });
+      // Marquer qu'on est en train de rediriger
+      setRedirecting(true);
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Identifiants incorrects');
-      }
-      
-      const data = await response.json();
-      console.log('Réponse API:', data);
-      
-      // Stocker l'access token (durée 1 heure)
-      document.cookie = `chicken-nation-session=${data.token || data.accessToken}; path=/; max-age=3600`;
-      
-      // Stocker le refresh token (durée 30 jours)
-      if (data.refreshToken) {
-        document.cookie = `chicken-nation-refresh=${data.refreshToken}; path=/; max-age=${30 * 24 * 60 * 60}`;
-      }
-      
-      console.log('Tokens stockés dans les cookies');
-      console.log('Redirection vers /gestion...');
-      
-      // Forcer la redirection avec window.location pour éviter les problèmes avec le router
-      window.location.href = '/gestion';
+      // Rediriger vers le tableau de bord
+      router.push('/gestion');
     } catch (error) {
-      console.error('Erreur de connexion détaillée:', error);
-      setLoginError(error instanceof Error ? error.message : 'Identifiants incorrects');
-    } finally {
-      setIsLoading(false);
+      setLoginError(error instanceof Error ? error.message : 'Erreur de connexion');
     }
   };
 
-  // Afficher un écran de chargement pendant la vérification
-  if (checkingAuth) {
+  // Afficher un écran de chargement pendant la vérification ou la redirection
+  if (checkingAuth || redirecting) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-md text-center">
-          <h2 className="text-xl font-bold text-orange-500 mb-4">Chargement...</h2>
-          <p className="text-gray-600">Vérification de votre authentification</p>
+          <h2 className="text-xl font-bold text-orange-500 mb-4">
+            {redirecting ? "Redirection en cours..." : "Chargement..."}
+          </h2>
+          <p className="text-gray-600">
+            {redirecting ? "Vous allez être redirigé vers le dashboard" : "Vérification de votre authentification"}
+          </p>
         </div>
       </div>
     );
@@ -98,7 +80,7 @@ export default function LoginPage() {
        <AuthHeader />
      </div>
 
-     {/* Contenu principal */}
+     {/* Contenu principal - exactement la hauteur restante */}
      <main
        className={`${styles.fullHeightContainer} flex flex-col md:flex-row`}
        style={{
@@ -119,12 +101,15 @@ export default function LoginPage() {
             priority
             className="object-contain"
           />
+
         </div>
       </div>
 
       {/* Section droite avec formulaire */}
       <div className="flex-1 flex items-center justify-center -mt-56 p-6 md:p-12">
         <div className="w-full max-w-md">
+
+
           {/* Carte de connexion */}
           <div className="bg-white rounded-3xl shadow-lg p-8 z-10">
             <h2 className="text-center text-2xl text-orange-500 font-sofia-bold text-primary mb-8">
@@ -132,7 +117,7 @@ export default function LoginPage() {
             </h2>
 
             <div className="text-center text-sm font-sofia-regular text-dark mb-6">
-              Identifiant de l'admin
+              Identifiant de l&apos;admin
             </div>
 
             {loginError && (

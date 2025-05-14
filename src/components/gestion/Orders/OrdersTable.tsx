@@ -12,6 +12,7 @@ import { OrderStatus, OrderType, updateOrderStatus } from '@/services/orderServi
 // Interface existante pour les commandes (ne pas modifier pour garder l'UI intacte)
 export interface Order {
   id: string
+  reference: string
   clientName: string
   date: string
   status: 'NOUVELLE' | 'EN COURS' | 'EN PRÉPARATION' | 'LIVRÉ' | 'COLLECTÉ' | 'ANNULÉE' | 'LIVRAISON' | 'PRÊT'
@@ -34,6 +35,7 @@ const mapApiOrderToUiOrder = (apiOrder: any): Order => {
   if (!apiOrder || typeof apiOrder !== 'object') {
      return {
       id: 'error',
+      reference: 'REF-ERROR',
       clientName: 'Erreur de données',
       date: new Date().toLocaleDateString('fr-FR'),
       status: 'ANNULÉE',
@@ -143,7 +145,8 @@ const mapApiOrderToUiOrder = (apiOrder: any): Order => {
   
   // Construire et retourner l'objet Order pour l'UI
   return {
-    id: apiOrder.id || apiOrder.reference || 'ID inconnu',
+    id: apiOrder.id || 'ID inconnu',
+    reference: apiOrder.reference || `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(Math.random() * 100000).toString().padStart(5, '0')}`,
     clientName,
     date,
     status: uiStatus,
@@ -173,45 +176,7 @@ const mapUiFilterToApiFilter = (filter: string): { status?: OrderStatus, type?: 
   }
 };
 
-// Fonction pour générer des commandes de test (utilisée uniquement si l'API ne renvoie pas de données)
-const generateOrders = (): Order[] => {
-  const orderTypes = ['À livrer', 'À table', 'À récupérer'] as const;
-  const statuses = ['NOUVELLE', 'EN COURS', 'LIVRÉ', 'COLLECTÉ', 'ANNULÉE', 'LIVRAISON', 'PRÊT', 'EN PRÉPARATION'] as const;
-  
-  return Array.from({ length: 24 }, (_, index) => {
-    const orderTypeIndex = Math.floor(Math.random() * 3);
-    const orderType = orderTypes[orderTypeIndex];
-    
-    let status: typeof statuses[number];
-    if (index < 8) {
-      status = index % 2 === 0 ? 'NOUVELLE' : statuses[Math.floor(Math.random() * (statuses.length - 1)) + 1];
-    } else {
-      status = statuses[Math.floor(Math.random() * statuses.length)];
-    }
-    
-    const tableNumber = orderType === 'À table' ? `${Math.floor(Math.random() * 20) + 1}` : undefined;
-    
-    return {
-      id: `${index + 1}`.padStart(5, '0'),
-      clientName: `Client ${index + 1}`,
-      userId: `user-${index}`,
-      date: new Date(Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      }),
-      status: status,
-      totalPrice: 27000, 
-      deliveryPrice: 0,
-      orderType: orderType,
-      address: 'Adresse Rue 2',
-      tableNumber,
-      hidden: false
-    };
-  });
-};
+// Fonction de génération de données mockées retirée - l'API est maintenant utilisée
 
 export function OrdersTable({ onViewDetails }: OrdersTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
@@ -244,9 +209,6 @@ export function OrdersTable({ onViewDetails }: OrdersTableProps) {
       console.log('Données brutes de la commande:', JSON.stringify(apiOrders[0], null, 2));
       const mappedOrders = apiOrders.map(mapApiOrderToUiOrder);
       setLocalOrders(mappedOrders);
-    } else if (apiOrders.length === 0 && !isLoading && !error) {
-      // Si l'API ne renvoie pas de données, utiliser des données de test
-      setLocalOrders(generateOrders());
     }
   }, [apiOrders, isLoading, error]);
 

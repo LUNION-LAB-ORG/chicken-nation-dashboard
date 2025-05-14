@@ -24,6 +24,7 @@ export default function MenuCategories({ categories: propCategories, menuItems: 
   
   // États pour les plats
   const [categoryMenus, setCategoryMenus] = useState<MenuItemType[]>([])
+  const [allMenus, setAllMenus] = useState<MenuItemType[]>([])
   const [activePage, setActivePage] = useState(1)
   
   // États de chargement
@@ -78,12 +79,41 @@ export default function MenuCategories({ categories: propCategories, menuItems: 
     fetchMenusByCategory();
   }, [activeCategoryId]);
 
+  // Charger tous les menus des catégories sélectionnées
+  useEffect(() => {
+    const fetchMenusForSelectedCategories = async () => {
+      if (selectedCategories.length <= 1) return; // Si 0 ou 1 catégorie, on utilise l'effet ci-dessus
+      
+      try {
+        setLoadingMenus(true);
+        
+        // Trouver les IDs des catégories sélectionnées
+        const selectedCategoryIds = categories
+          .filter(cat => selectedCategories.includes(cat.name))
+          .map(cat => cat.id);
+        
+        // Charger les menus pour chaque catégorie et les combiner
+        const allMenuPromises = selectedCategoryIds.map(id => getMenusByCategoryId(id));
+        const menuArrays = await Promise.all(allMenuPromises);
+        
+        // Fusionner tous les tableaux de menus en un seul
+        const combinedMenus = menuArrays.flat();
+        
+        setAllMenus(combinedMenus);
+        setError(null);
+      } catch (err) {
+        setError('Erreur lors du chargement des plats');
+      } finally {
+        setLoadingMenus(false);
+      }
+    };
+    
+    fetchMenusForSelectedCategories();
+  }, [selectedCategories, categories]);
+
   // Filtrer les plats si des catégories sont sélectionnées dans le filtre
-  const filteredMenus = selectedCategories.length > 0
-    ? categoryMenus.filter(menu => {
-        const menuCategory = categories.find(cat => cat.id === menu.categoryId);
-        return menuCategory && selectedCategories.includes(menuCategory.name);
-      })
+  const filteredMenus = selectedCategories.length > 1
+    ? allMenus
     : categoryMenus;
 
   // Pagination
@@ -117,13 +147,23 @@ export default function MenuCategories({ categories: propCategories, menuItems: 
               onChange={(selected) => {
                 setSelectedCategories(selected)
               
-                if (selected.length > 0) {
-                  setActiveCategory('')
-                } else if (categories.length > 0) {
-                  setActiveCategory(categories[0].name)
-                  setActiveCategoryId(categories[0].id)
+                if (selected.length === 1) {
+                  // Si une seule catégorie est sélectionnée, l'activer
+                  const selectedCategory = categories.find(cat => cat.name === selected[0]);
+                  if (selectedCategory) {
+                    setActiveCategory(selectedCategory.name);
+                    setActiveCategoryId(selectedCategory.id);
+                  }
+                } else if (selected.length === 0 && categories.length > 0) {
+                  // Si aucune catégorie n'est sélectionnée, revenir à la première catégorie
+                  setActiveCategory(categories[0].name);
+                  setActiveCategoryId(categories[0].id);
+                } else if (selected.length > 1) {
+                  // Si plusieurs catégories sont sélectionnées, désactiver la catégorie active
+                  setActiveCategory('');
                 }
-                setActivePage(1)
+                
+                setActivePage(1);
               }}
             />
           </div>
@@ -143,7 +183,8 @@ export default function MenuCategories({ categories: propCategories, menuItems: 
                 onClick={() => {
                   setActiveCategory(category.name)
                   setActiveCategoryId(category.id)
-                  setSelectedCategories([])
+                  // Mettre à jour selectedCategories pour qu'il contienne uniquement la catégorie sélectionnée
+                  setSelectedCategories([category.name])
                   setActivePage(1)
                 }}
               >

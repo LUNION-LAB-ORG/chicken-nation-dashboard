@@ -103,8 +103,7 @@ export default function Clients({ setActiveTab }: ClientsProps) {
         <div className="-mt-10">
           <ClientHeader 
             currentView={clientState.view}
-            selectedClientId={clientState.selectedClientId}
-            onCreateMenu={() => handleViewChange('create')}
+            selectedClientId={clientState.selectedClientId} 
             onBack={clientState.view !== 'list' ? handleBack : undefined}
             onViewReviews={handleViewReviews}
             onToggleConnected={toggleConnectedFilter}

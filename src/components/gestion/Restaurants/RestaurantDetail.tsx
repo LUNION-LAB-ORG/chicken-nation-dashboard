@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Phone, Mail, User as UserIcon, Calendar, MapPin, ArrowLeft, Clock, Star, ShoppingBag, DollarSign, Users, ChevronRight } from 'lucide-react'
-import { toast } from 'react-hot-toast'
-import Toggle from '@/components/ui/Toggle'
+import { Phone, Mail, User as UserIcon, Calendar, MapPin,   Clock, Star, ShoppingBag, DollarSign, Users, ChevronRight } from 'lucide-react'
+import { toast } from 'react-hot-toast' 
 import { getRestaurantById, Restaurant, Schedule, updateRestaurantStatus, getRestaurantManager } from '@/services/restaurantService'
-import { IMAGE_BASE_URL } from '@/config'
+  
 import DashboardPageHeader from '@/components/ui/DashboardPageHeader'
 import { getAllMenus } from '@/services/menuService'
+import GoogleMapsWrapper from './GoogleMapsWrapper'
+import RestaurantMap from './RestaurantMap'
 
 // Interface pour le manager du restaurant
 interface RestaurantManager {
@@ -319,9 +320,14 @@ export default function RestaurantDetail({ open, restaurantId, onClose, onEdit }
                       Lat: {restaurant.latitude}, Long: {restaurant.longitude}
                     </p>
                     
-                 
-                    <div className="mt-2 bg-gray-100 rounded-lg h-32 flex items-center justify-center">
-                      <p className="text-sm text-gray-500">Carte à intégrer</p>
+                    <div className="mt-2">
+                      <RestaurantMap
+                        initialLat={restaurant.latitude}
+                        initialLng={restaurant.longitude}
+                        onLocationChange={() => {}}
+                        isViewOnly={true}
+                        className="h-[150px]"
+                      />
                     </div>
                   </div>
                 </div>
@@ -345,7 +351,7 @@ export default function RestaurantDetail({ open, restaurantId, onClose, onEdit }
                         alt={manager.fullname}
                         width={64}
                         height={64}
-                        className="rounded-full object-cover"
+                        className="rounded-full object-contain"
                       />
                     ) : (
                       <UserIcon className="h-8 w-8 text-gray-400" />
@@ -403,7 +409,7 @@ export default function RestaurantDetail({ open, restaurantId, onClose, onEdit }
               {/* Statistiques */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                 <h3 className="text-[#F17922] text-base font-semibold mb-4 flex items-center">
-                  <Star className="h-4 w-4 mr-2" />
+                  <ShoppingBag className="h-4 w-4 mr-2" />
                   Statistiques
                 </h3>
                 
@@ -470,14 +476,14 @@ export default function RestaurantDetail({ open, restaurantId, onClose, onEdit }
                       .map((menu) => (
                         <div key={menu.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer" onClick={() => handleOpenMenuModal(menu)}>
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-orange-100 rounded-md flex items-center justify-center overflow-hidden">
+                            <div className="w-12 h-12 border-[1px] border-orange-100 rounded-md flex items-center justify-center overflow-hidden">
                               {menu.image ? (
                                 <Image 
                                   src={menu.image} 
                                   alt={menu.name}
                                   width={40}
                                   height={40}
-                                  className="object-cover w-full h-full"
+                                  className="object-contain w-full h-full"
                                 />
                               ) : (
                                 <ShoppingBag className="h-5 w-5 text-[#F17922]" />
@@ -564,7 +570,7 @@ export default function RestaurantDetail({ open, restaurantId, onClose, onEdit }
                       src={selectedMenu.image} 
                       alt={selectedMenu.name}
                       fill
-                      className="object-cover"
+                      className="object-contain"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">

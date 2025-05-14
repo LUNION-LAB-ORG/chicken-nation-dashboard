@@ -32,6 +32,7 @@ interface ProductViewProduct {
   price: number;
   stock: number;
   image: string;
+  available: boolean; 
 }
 
 // Interface Product pour Supplement
@@ -47,6 +48,9 @@ interface AddProductProduct {
 
 // Interface Product combinant les deux interfaces pour une utilisation interne
 interface Product extends ProductViewProduct, Omit<AddProductProduct, 'id' | 'name' | 'category' | 'price'> {}
+
+interface InventoryProps {
+}
 
 export default function Inventory() {
   const [currentView, setCurrentView] = useState<ViewType>('products');
@@ -66,12 +70,8 @@ export default function Inventory() {
   const [isEditCategoryModalOpen, setIsEditCategoryModalOpen] = useState(false);
   const [isDeleteCategoryModalOpen, setIsDeleteCategoryModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  // Exemple de données pour les produits (pour éviter un tableau vide au démarrage)
-  const [products, setProducts] = useState<any[]>([
-    {
-      
-    }
-  ]);
+  // Initialisation avec un tableau vide
+  const [products, setProducts] = useState<any[]>([]);
 
   // Fonction pour traduire les catégories en français
   const translateCategory = (category: string): string => {
@@ -121,7 +121,8 @@ export default function Inventory() {
               category: 'DRINK',
               price: item.price,
               stock: item.available ? 1 : 0,
-              image: item.image || '/images/plat.png'
+              image: item.image || '/images/plat.png',
+              available: item.available 
             });
           });
         }
@@ -135,7 +136,8 @@ export default function Inventory() {
               category: 'FOOD',
               price: item.price,
               stock: item.available ? 1 : 0,
-              image: item.image || '/images/plat.png'
+              image: item.image || '/images/plat.png',
+              available: item.available 
             });
           });
         }
@@ -149,7 +151,8 @@ export default function Inventory() {
               category: 'ACCESSORY',
               price: item.price,
               stock: item.available ? 1 : 0,
-              image: item.image || '/images/plat.png'
+              image: item.image || '/images/plat.png',
+              available: item.available 
             });
           });
         }
@@ -163,16 +166,57 @@ export default function Inventory() {
     fetchSupplements();
   }, []);
 
+  // Mettre à jour les catégories avec le nombre de produits chaque fois que la liste des produits change
+  useEffect(() => {
+    // Seulement si nous avons des produits et des catégories
+    if (products.length > 0 && categories.length > 0) {
+      console.log('Produits:', products);
+      console.log('Catégories:', categories);
+      
+      const updatedCategories = categories.map(cat => {
+        // Compter le nombre de produits pour cette catégorie
+        const count = products.filter(product => product.category === cat.name).length;
+        console.log(`Catégorie ${cat.name}: ${count} produits`);
+        
+        return {
+          ...cat,
+          productCount: count
+        };
+      });
+      
+      console.log('Catégories mises à jour:', updatedCategories);
+      setCategories(updatedCategories);
+    }
+  }, [products]);
+
   // Récupérer les catégories depuis l'API
   const fetchCategories = async () => {
     setIsLoading(true);
     try {
+      // Récupérer toutes les catégories avec leurs plats
+      const { getCategoryWithDishes } = await import('@/services/categoryService');
       const data = await getAllCategories();
-      const adaptedCategories: Category[] = data.map(cat => ({
-        ...cat,
-        productCount: 0 
-      }));
-      setCategories(adaptedCategories);
+      
+      // Pour chaque catégorie, récupérer les plats pour obtenir le nombre
+      const categoriesWithDishCount = await Promise.all(
+        data.map(async (category) => {
+          try {
+            const categoryWithDishes = await getCategoryWithDishes(category.id);
+            return {
+              ...category,
+              productCount: categoryWithDishes.dishes ? categoryWithDishes.dishes.length : 0
+            };
+          } catch (error) {
+            console.error(`Erreur lors de la récupération des plats pour la catégorie ${category.id}:`, error);
+            return {
+              ...category,
+              productCount: 0
+            };
+          }
+        })
+      );
+      
+      setCategories(categoriesWithDishCount);
     } catch (error) {
       console.error('Erreur lors du chargement des catégories:', error);
       toast.error('Impossible de charger les catégories');
@@ -248,7 +292,8 @@ export default function Inventory() {
       ...product,
       stock: product.quantity,  
       image: '/images/plat.png', 
-      totalValue: product.price * product.quantity  
+      totalValue: product.price * product.quantity,
+      available: product.available || false  
     };
     
   
@@ -419,9 +464,7 @@ export default function Inventory() {
 
           
             {currentView === 'categories' ? (
-              <div>
-                
-              </div>
+              <div />
             ) : (
               <SupplementTabs 
                 tabs={tabs} 

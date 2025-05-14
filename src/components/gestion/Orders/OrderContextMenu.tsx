@@ -24,10 +24,8 @@ const OrderContextMenu: React.FC<OrderContextMenuProps> = ({
   onHideFromList,
   onRemoveFromList
 }) => {
-  if (!isOpen) return null;
-
- 
   const isAccepted = order.status !== 'NOUVELLE';
+  
   const handleAccept = () => {
     onAccept(order.id);
     onClose();
@@ -53,10 +51,10 @@ const OrderContextMenu: React.FC<OrderContextMenuProps> = ({
     onClose();
   };
 
- 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (isOpen && !(event.target as Element).closest('.order-context-menu')) {
+      if (isOpen && !(event.target as Element).closest('.order-context-menu') && 
+          !(event.target as Element).closest('.menu-button')) {
         onClose();
       }
     };
@@ -67,50 +65,62 @@ const OrderContextMenu: React.FC<OrderContextMenuProps> = ({
     };
   }, [isOpen, onClose]);
 
+  if (!isOpen) return null;
+
   return (
     <div 
-      className="order-context-menu absolute z-50 right-0 mt-1 w-56 bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200"
-      style={{ top: '100%' }}
+      className="order-context-menu w-56 bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200"
     >
-      {!isAccepted ? (
-        <div className="py-1">
-          <button
-            className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 text-[#F17922] hover:bg-gray-50 cursor-pointer"
-            onClick={handleAccept}
-          >
-             <Image src="/icons/check.png" alt="Accepter" width={20} height={20} />
-            <span>Accepter la commande</span>
-          </button>
-          <button
-            className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 text-red-600 hover:bg-gray-50 cursor-pointer"
-            onClick={handleReject}
-          >
-            <X size={16} />
-            <span>Refuser</span>
-          </button>
-        </div>
-      ) : (
-        <div className="py-1">
-          <button
-            className="w-full px-4 py-2 text-left text-sm flex items-center font-bold gap-2 text-[#888891] hover:bg-orange-50 cursor-pointer"
-            onClick={handleViewDetails}
-          >
-            <span>Voir les détails</span>
-          </button>
-          <button
-            className="w-full px-4 py-2 text-left text-sm flex items-center font-bold gap-2 text-[#888891] hover:bg-orange-50 cursor-pointer"
-            onClick={handleHideFromList}
-          >
-            <span>Masquer de la liste</span>
-          </button>
-          <button
-            className="w-full px-4 py-2 text-left text-sm flex items-center font-bold gap-2 text-[#888891] hover:bg-orange-50 cursor-pointer"
-            onClick={handleRemoveFromList}
-          >
-            <span>Retirer de la liste</span>
-          </button>
-        </div>
-      )}
+      <div className="py-1">
+       
+        {!isAccepted ? (
+          <>
+            <button
+              className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 text-[#F17922] hover:bg-gray-50 cursor-pointer"
+              onClick={handleAccept}
+            >
+              <Image src="/icons/check.png" alt="Accepter" width={20} height={20} />
+              <span>Accepter la commande</span>
+            </button>
+            <button
+              className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 text-red-600 hover:bg-gray-50 cursor-pointer"
+              onClick={handleReject}
+            >
+              <X size={16} />
+              <span>Refuser</span>
+            </button>
+            <button
+          className="w-full px-4 py-2 text-left text-sm flex items-center font-semibold gap-2 text-[#888891] hover:bg-orange-50 cursor-pointer"
+          onClick={handleViewDetails}
+        >
+          <span>Voir les détails</span>
+        </button>
+
+          </>
+        ) : (
+          <>
+            <button
+              className="w-full px-4 py-2 text-left text-sm flex items-center font-bold gap-2 text-[#888891] hover:bg-orange-50 cursor-pointer"
+              onClick={handleHideFromList}
+            >
+              <span>Masquer de la liste</span>
+            </button>
+            <button
+              className="w-full px-4 py-2 text-left text-sm flex items-center font-bold gap-2 text-[#888891] hover:bg-orange-50 cursor-pointer"
+              onClick={handleRemoveFromList}
+            >
+              <span>Retirer de la liste</span>
+            </button>
+            <button
+          className="w-full px-4 py-2 text-left text-sm flex items-center font-semibold gap-2 text-[#888891] hover:bg-orange-50 cursor-pointer"
+          onClick={handleViewDetails}
+        >
+          <span>Voir les détails</span>
+        </button>
+
+          </>
+        )}
+      </div>
     </div>
   );
 };
