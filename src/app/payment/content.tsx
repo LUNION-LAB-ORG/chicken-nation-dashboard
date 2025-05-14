@@ -4,7 +4,7 @@ import { useKKiaPay } from "kkiapay-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 import useGetDataPaiement from "./components/useGetDataPaiement";
-import ErrorPage from "./components/errorPage";
+import ErrorPage from "./components/ErrorPage";
 
 export interface ResponseKkiaPay {
   transactionId: string;
