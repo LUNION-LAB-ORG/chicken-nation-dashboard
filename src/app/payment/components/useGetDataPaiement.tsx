@@ -12,8 +12,9 @@ const useGetDataPaiement = () => {
   const name = searchParams.get("name") as string;
   const email = searchParams.get("email") as string;
   const orderId = searchParams.get("orderId") as string;
+  const token = searchParams.get("token") as string;
 
-  const isValid = amount && phone && email && name;
+  const isValid = amount && phone && email && name && token;
 
   return {
     amount,
@@ -21,6 +22,7 @@ const useGetDataPaiement = () => {
     name,
     email,
     orderId,
+    token,
     isValid,
   };
 };
