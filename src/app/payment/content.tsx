@@ -1,10 +1,10 @@
 "use client";
-import { createPaiement } from "@/services/paiement.action"; 
+import { createPaiement } from "@/services/paiement.action";
 import { useKKiaPay } from "kkiapay-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
-import useGetDataPaiement from "./components/useGetDataPaiement";  
-import ErrorPage from "./components/ErrorPage";
+import useGetDataPaiement from "./components/useGetDataPaiement";
+import ErrorPage from "./components/errorPage";
 
 export interface ResponseKkiaPay {
   transactionId: string;
@@ -24,7 +24,7 @@ export default function Content({
     useKKiaPay();
   const router = useRouter();
   // Récupérer les données dans l'url
-  const { amount, phone, name, email, orderId, isValid } = useGetDataPaiement();
+  const { amount, phone, name, email, orderId, token, isValid } = useGetDataPaiement();
 
   function open() {
     openKkiapayWidget({
@@ -44,6 +44,7 @@ export default function Content({
       // Vérification et création du paiement côté backend
       const res = await createPaiement({
         transactionId: response.transactionId,
+        token,
         reason: response?.reason ?? undefined,
         orderId: orderId ?? undefined,
       });
@@ -57,7 +58,7 @@ export default function Content({
         }&status=${res.paiement?.status ?? ""}`
       );
     },
-    [orderId, router]
+    [orderId, router, token]
   );
 
   useEffect(() => {

@@ -1,10 +1,10 @@
- 
+
 export const MAX_SUPPLEMENTS_PER_TYPE = 3;
 
 export enum SUPPLEMENT_TYPE {
-  ACCESSORY = 'ACCESSORY', 
-  FOOD = 'FOOD',           
-  DRINK = 'DRINK'          
+  ACCESSORY = 'ACCESSORY',
+  FOOD = 'FOOD',
+  DRINK = 'DRINK'
 }
 
 export const SUPPLEMENT_TYPE_LABELS = {

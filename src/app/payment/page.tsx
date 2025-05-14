@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Content from "./content";
-import ErrorPage from "./components/ErrorPage";
+import ErrorPage from "./components/errorPage";
 import Loading from "./loading";
 
 export default async function PaymentPage() {
