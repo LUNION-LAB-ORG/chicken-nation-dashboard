@@ -1,11 +1,10 @@
-"use client"
+"use client";
 
 import { useSearchParams } from "next/navigation";
 
 // Hook pour récupérer les données de paiement depuis l'url
 const useGetDataPaiement = () => {
   const searchParams = useSearchParams();
-
 
   const amount = Number(searchParams.get("amount"));
   const phone = searchParams.get("phone") as string;
