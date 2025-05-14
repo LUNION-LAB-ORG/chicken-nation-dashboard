@@ -37,7 +37,6 @@ export default function Content({
       name,
     });
   }
-  console.log("Données",{ amount, phone, name, email, orderId, token, isValid })
 
   // Gestionnaire de la réponse du portail de paiement
   const handlerPaiement = useCallback(
@@ -51,7 +50,6 @@ export default function Content({
         reason: response?.reason ?? undefined,
         orderId: orderId ?? undefined,
       });
-      console.log("Retour",res)
 
       router.push(
         `/payment/thank-you?transactionId=${
