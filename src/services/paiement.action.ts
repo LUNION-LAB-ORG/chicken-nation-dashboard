@@ -3,6 +3,7 @@
 
 export interface PaiementDto {
     transactionId: string;
+    token: string;
     orderId?: string;
     reason?: {
         code: string;
