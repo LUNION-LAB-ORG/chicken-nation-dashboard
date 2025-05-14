@@ -37,13 +37,13 @@ export default function Content({
       name,
     });
   }
+  console.log("Données",{ amount, phone, name, email, orderId, token, isValid })
 
   // Gestionnaire de la réponse du portail de paiement
   const handlerPaiement = useCallback(
     async (response: ResponseKkiaPay) => {
 
       console.log("Retour Kkiapay",response)
-      console.log("Données",{ amount, phone, name, email, orderId, token, isValid })
       // Vérification et création du paiement côté backend
       const res = await createPaiement({
         transactionId: response.transactionId,
