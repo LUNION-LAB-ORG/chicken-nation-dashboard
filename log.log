@@ -1,0 +1,266 @@
+npx eslint .
+npm warn Unknown project config "strict-peer-dependencies". This will stop working in the next major version of npm.
+m.
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\app\gestion\page.tsx
+  3:31  error  'Suspense' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Clients\ClientsTable.tsx
+  39:5  error  'error' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Clients\GlobalReviews.tsx
+    2:35  error  'CommentFilters' is defined but never used                       @typescript-eslint/no-unused-vars
+  124:9   error  'handleSelectAllCurrentPage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  133:9   error  'isAllCurrentPageSelected' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  171:9   error  'renderStars' is assigned a value but never used                 @typescript-eslint/no-unused-vars
+  190:9   error  'formatDate' is assigned a value but never used                  @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Dashboard\index.tsx
+  138:6  warning  React Hook useEffect has a missing dependency: 'displayMode'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Inventory\AddSupplement.tsx
+  80:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  85:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Inventory\CategoriesTable.tsx
+   3:27  error  'useMemo' is defined but never used         @typescript-eslint/no-unused-vars
+  27:3   error  'onRefresh' is defined but never used       @typescript-eslint/no-unused-vars
+  37:5   error  'error' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  65:40  error  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  79:30  error  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Inventory\SupplementView.tsx
+  75:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  98:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Menus\BestSellers.tsx
+  27:23  error  'setSearchQuery' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Menus\MenuComments.tsx
+  202:24  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Menus\MenuRightSide.tsx
+  102:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  125:11  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Orders\OrderDetails.tsx
+  96:6  warning  React Hook useEffect has a missing dependency: 'convertApiStatusToUiStatus'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Orders\OrdersTable.tsx
+  524:6  warning  React Hook useEffect has a missing dependency: 'loadAllOrders'. Either include it or remove the dependency array  react-hooks/exhaustive-deps   
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Promos\EditPersonalizedPromo.tsx
+  540:13  error  'loadingToast' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Promos\EditPromo.tsx
+  557:6  warning  React Hook useEffect has missing dependencies: 'setActiveProductTarget', 'setActivePromoType', 'setBuyQuantity', 'setDiscountCeiling', 'setFixedAmountValue', 'setGetQuantity', 'setMaxTotalUsage', 'setMaxUsagePerClient', 'setMinOrderAmount', 'setPercentageValue', 'setSelectedCategories', 'setSelectedMenus', 'setSelectedPublicTypes', 'setSelectedRestaurants', and 'setSelectedRewardMenus'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Promos\PromoDesignCard.tsx
+   4:10  error  'Upload' is defined but never used                      @typescript-eslint/no-unused-vars
+   7:10  error  'formatImageUrl' is defined but never used              @typescript-eslint/no-unused-vars
+  16:47  error  'onCancel' is defined but never used                    @typescript-eslint/no-unused-vars
+  17:20  error  'setFormData' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  31:9   error  'handleImageUpload' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  42:9   error  'handleSubmit' is assigned a value but never used       @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Promos\index.tsx
+   20:3   error  'createPromotion' is defined but never used             @typescript-eslint/no-unused-vars
+  131:13  error  'promotionFormData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Restaurants\AddRestaurant.tsx
+  172:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  177:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\components\gestion\Restaurants\RestaurantMap.tsx
+  65:6  warning  React Hook useEffect has a missing dependency: 'onLocationChange'. Either include it or remove the dependency array. If 'onLocationChange' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\hooks\useMenuFormCategories.ts
+  187:6  warning  React Hook useEffect has a missing dependency: 'selectedRestaurants'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\hooks\useRestaurants.ts
+  78:6  warning  React Hook useEffect has a missing dependency: 'selectedRestaurants'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\services\commentService.ts
+  112:31  error  'filters' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\services\promotionService.ts
+  356:66  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  357:68  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  369:79  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  370:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  372:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\store\productStore.ts
+   72:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   73:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  258:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  274:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\utils\cookieHelpers.ts
+  27:5  error  'httpOnly' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\.yoyo\snapshot\src\utils\errorMessages.ts
+    7:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   13:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  211:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  247:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  301:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\app\test-rbac\page.tsx
+  105:33  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  105:48  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\components\gestion\Clients\GlobalReviews.tsx
+    2:10  error  'Comment' is defined but never used                              @typescript-eslint/no-unused-vars
+    3:16  error  'Filter' is defined but never used                               @typescript-eslint/no-unused-vars
+   20:23  error  'setShowFilters' is assigned a value but never used              @typescript-eslint/no-unused-vars
+   38:5   error  'error' is assigned a value but never used                       @typescript-eslint/no-unused-vars
+   40:5   error  'refetch' is assigned a value but never used                     @typescript-eslint/no-unused-vars
+   61:9   error  'handleSelectAllCurrentPage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   70:9   error  'isAllCurrentPageSelected' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  108:9   error  'renderStars' is assigned a value but never used                 @typescript-eslint/no-unused-vars
+  127:9   error  'formatDate' is assigned a value but never used                  @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\components\gestion\Dashboard\index.tsx
+  121:6  warning  React Hook useEffect has a missing dependency: 'user.restaurant_id'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  162:6  warning  React Hook useEffect has a missing dependency: 'displayMode'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\components\gestion\Inventory\AddSupplement.tsx
+  80:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  85:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\components\gestion\Inventory\CategoriesTable.tsx
+   3:27  error  'useMemo' is defined but never used              @typescript-eslint/no-unused-vars
+  28:3   error  'onRefresh' is defined but never used            @typescript-eslint/no-unused-vars
+  37:5   error  'totalItems' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  41:5   error  'error' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  43:5   error  'refetch' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  56:40  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  70:30  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\components\gestion\Inventory\SupplementView.tsx
+   44:3   error  'selectedTab' is defined but never used          @typescript-eslint/no-unused-vars
+   53:3   error  'totalItems' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   85:40  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  108:30  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\components\gestion\Menus\MenuComments.tsx
+  202:24  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\components\gestion\Menus\MenuRightSide.tsx
+  102:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  125:11  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\components\gestion\Orders\OrderDetails.tsx
+  96:6  warning  React Hook useEffect has a missing dependency: 'convertApiStatusToUiStatus'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\components\gestion\Orders\OrdersTable.tsx
+  508:5  error  'totalItems' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\components\gestion\Promos\EditPersonalizedPromo.tsx
+  540:13  error  'loadingToast' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\components\gestion\Promos\EditPromo.tsx
+  557:6  warning  React Hook useEffect has missing dependencies: 'setActiveProductTarget', 'setActivePromoType', 'setBuyQuantity', 'setDiscountCeiling', 'setFixedAmountValue', 'setGetQuantity', 'setMaxTotalUsage', 'setMaxUsagePerClient', 'setMinOrderAmount', 'setPercentageValue', 'setSelectedCategories', 'setSelectedMenus', 'setSelectedPublicTypes', 'setSelectedRestaurants', and 'setSelectedRewardMenus'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\components\gestion\Promos\PromoDesignCard.tsx
+   4:10  error  'Upload' is defined but never used                      @typescript-eslint/no-unused-vars
+   7:10  error  'formatImageUrl' is defined but never used              @typescript-eslint/no-unused-vars
+  16:47  error  'onCancel' is defined but never used                    @typescript-eslint/no-unused-vars
+  17:20  error  'setFormData' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  31:9   error  'handleImageUpload' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  42:9   error  'handleSubmit' is assigned a value but never used       @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\components\gestion\Promos\index.tsx
+   20:3   error  'createPromotion' is defined but never used             @typescript-eslint/no-unused-vars
+  131:13  error  'promotionFormData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\components\gestion\Restaurants\AddRestaurant.tsx
+  172:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  177:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\components\gestion\Restaurants\RestaurantMap.tsx
+  65:6  warning  React Hook useEffect has a missing dependency: 'onLocationChange'. Either include it or remove the dependency array. If 'onLocationChange' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\components\ui\NotificationDropdown.tsx
+  28:5  error  'totalNotifications' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\hooks\useCategoriesQuery.ts
+   1:8   error    'React' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+   3:10  error    'getCategories' is defined but never used                                                                       @typescript-eslint/no-unused-vars
+  34:9   error    'buildApiFilters' is assigned a value but never used                                                            @typescript-eslint/no-unused-vars
+  63:5   error    'refetch' is assigned a value but never used                                                                    @typescript-eslint/no-unused-vars
+  95:6   warning  React Hook useEffect has a missing dependency: 'currentPage'. Either include it or remove the dependency array  react-hooks/exhaustive-deps     
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\hooks\useCommentsQuery.ts
+   56:5  error    'refetch' is assigned a value but never used                                                                    @typescript-eslint/no-unused-vars
+  151:6  warning  React Hook useEffect has a missing dependency: 'currentPage'. Either include it or remove the dependency array  react-hooks/exhaustive-deps     
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\hooks\useCustomersQuery.ts
+   1:8  error    'React' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+  77:5  error    'refetch' is assigned a value but never used                                                                    @typescript-eslint/no-unused-vars
+  99:6  warning  React Hook useEffect has a missing dependency: 'currentPage'. Either include it or remove the dependency array  react-hooks/exhaustive-deps      
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\hooks\useDishesQuery.ts
+    1:8   error    'React' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+    3:10  error    'getDishes' is defined but never used                                                                           @typescript-eslint/no-unused-vars
+   41:9   error    'buildApiFilters' is assigned a value but never used                                                            @typescript-eslint/no-unused-vars
+   80:5   error    'refetch' is assigned a value but never used                                                                    @typescript-eslint/no-unused-vars
+   90:43  error    Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+   93:46  error    Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+  110:45  error    Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+  127:50  error    Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+  187:6   warning  React Hook useEffect has a missing dependency: 'currentPage'. Either include it or remove the dependency array  react-hooks/exhaustive-deps    
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\hooks\useMenuFormCategories.ts
+  187:6  warning  React Hook useEffect has a missing dependency: 'selectedRestaurants'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\hooks\useNotificationsQuery.ts
+  116:79  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  142:79  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  168:79  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  193:79  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\hooks\useOrdersQuery.ts
+    1:51  error    'useMemo' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+   71:6   warning  React Hook useCallback has an unnecessary dependency: 'selectedDate'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+   88:5   error    'refetch' is assigned a value but never used                                                                            @typescript-eslint/no-unused-vars
+  112:6   warning  React Hook useEffect has a missing dependency: 'currentPage'. Either include it or remove the dependency array          react-hooks/exhaustive-deps
+  125:13  error    'avant' is assigned a value but never used                                                                              @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\hooks\useRestaurants.ts
+  78:6  warning  React Hook useEffect has a missing dependency: 'selectedRestaurants'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\services\dashboardService.ts
+  393:14  error  'apiError' is defined but never used  @typescript-eslint/no-unused-vars
+  396:12  error  'error' is defined but never used     @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\services\promotionService.ts
+  356:66  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  357:68  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  369:79  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  370:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  372:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\store\productStore.ts
+   72:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   73:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  258:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  274:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\utils\cookieHelpers.ts
+  27:5  error  'httpOnly' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\utils\errorMessages.ts
+    7:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   13:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  211:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  247:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  301:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard\src\utils\rbac.ts
+  255:8  error  Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable  @next/next/no-assign-module-variable     
+
+✖ 147 problems (123 errors, 24 warnings)
+
+PS C:\Users\Mishima\Desktop\union_lab\chicken-nation-dashboard> 
