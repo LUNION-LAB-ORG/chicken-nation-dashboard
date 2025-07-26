@@ -1,10 +1,18 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { NotificationAPI, Notification } from '@/services/notificationService';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+  InfiniteData,
+} from "@tanstack/react-query";
+import { NotificationAPI, Notification } from "@/services/notificationService";
+import { useEffect, useMemo, useRef } from "react";
+import { io } from "socket.io-client";
+import { SOCKET_URL } from "../../socket";
 
 interface UseNotificationsQueryProps {
   userId: string;
   userRole?: string;
-  enabled?: boolean;
+  enabled: boolean;
 }
 
 interface NotificationPage {
@@ -18,34 +26,38 @@ interface NotificationPage {
 }
 
 interface UseNotificationsQueryReturn {
-  // Données
   notifications: Notification[];
-  totalNotifications: number;
-  
-  // États de chargement
   isLoading: boolean;
   isFetchingNextPage: boolean;
   hasNextPage: boolean | undefined;
   error: Error | null;
-  
-  // Actions
   fetchNextPage: () => void;
   refetch: () => void;
   markAsRead: (notificationId: string) => void;
   markAsUnread: (notificationId: string) => void;
   markAllAsRead: () => void;
   deleteNotification: (notificationId: string) => void;
-  
-  // États des mutations
   isMarkingAsRead: boolean;
   isMarkingAsUnread: boolean;
   isMarkingAllAsRead: boolean;
   isDeletingNotification: boolean;
 }
 
-export const useNotificationsQuery = ({ userId, userRole, enabled = true }: UseNotificationsQueryProps): UseNotificationsQueryReturn => {
+export const useNotificationsQuery = ({
+  userId,
+  userRole,
+  enabled,
+}: UseNotificationsQueryProps): UseNotificationsQueryReturn => {
   const queryClient = useQueryClient();
+  const audioRef = useRef<HTMLAudioElement | null>(null); // Référence audio
+  useEffect(() => {
+    audioRef.current = new Audio("/musics/notification-sound.mp3");
+    audioRef.current.load();
 
+    return () => {
+      audioRef.current = null;
+    };
+  }, []);
   // ✅ Query pour récupérer les notifications avec pagination infinie
   const {
     data,
@@ -54,186 +66,261 @@ export const useNotificationsQuery = ({ userId, userRole, enabled = true }: UseN
     isFetchingNextPage,
     isLoading,
     error,
-    refetch
+    refetch,
   } = useInfiniteQuery<NotificationPage>({
-    queryKey: ['notifications', userId, userRole],
+    queryKey: ["notifications", userId, userRole],
     queryFn: async ({ pageParam = 1 }) => {
-      console.log(`[useNotificationsQuery] Fetching page ${pageParam} for user ${userId}, role: ${userRole}`);
-      
-      if (userRole === 'ADMIN') {
-        // ADMIN : Utiliser l'endpoint global avec pagination
-        // ✅ IMPORTANT : Filtrer pour ne récupérer que les notifications destinées aux utilisateurs du dashboard
-        const response = await NotificationAPI.getAllNotifications({ 
-          limit: 20, 
-          page: pageParam as number,
-          target: 'USER' // ✅ Exclure les notifications CUSTOMER (app mobile)
-        });
-        return response;
-      } else {
-        // Utilisateurs normaux : Utiliser l'endpoint spécifique (pas de pagination)
-        if (pageParam === 1) {
-          const notifications = await NotificationAPI.getUserNotifications(userId);
-          return {
-            data: notifications,
-            meta: {
-              limit: notifications.length,
-              page: 1,
-              total: notifications.length,
-              totalPages: 1
-            }
-          } as NotificationPage;
-        } else {
-          // Pas de pages supplémentaires pour les utilisateurs normaux
-          return {
-            data: [],
-            meta: { limit: 0, page: pageParam as number, total: 0, totalPages: 1 }
-          } as NotificationPage;
-        }
-      }
+      return NotificationAPI.getUserNotifications(userId, {
+        page: pageParam as number,
+      });
     },
     initialPageParam: 1,
-    getNextPageParam: (lastPage: NotificationPage) => {
-      if (lastPage.meta.page < lastPage.meta.totalPages) {
-        return lastPage.meta.page + 1;
+    getNextPageParam: (lastNotifications: NotificationPage) => {
+      if (lastNotifications.meta.page < lastNotifications.meta.totalPages) {
+        return lastNotifications.meta.page + 1;
       }
       return undefined;
     },
-    enabled,
-    staleTime: 30000, // 30 secondes
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    enabled: enabled,
+    staleTime: 30000,
+    gcTime: 5 * 60 * 1000,
   });
 
-  // ✅ Aplatir toutes les notifications de toutes les pages
-  const allNotifications = data?.pages.flatMap(page => page.data) || [];
-  
-  // ✅ FILTRAGE CÔTÉ CLIENT : Exclure définitivement les notifications CUSTOMER 
-  const notifications = allNotifications.filter(notification => 
-    notification.target !== 'CUSTOMER'
+  // ✅ Calcul des notifications à partir des pages
+  const notifications = useMemo(
+    () => data?.pages.flatMap((page) => page.data) || [],
+    [data]
   );
-  
-  // ✅ Métadonnées de la dernière page
-  const lastPage = data?.pages[data.pages.length - 1];
-  const totalNotifications = lastPage?.meta.total || 0;
 
-  // ✅ Mutation pour marquer comme lu
+  // ✅ Gestion des sockets
+  useEffect(() => {
+    const socket = io(SOCKET_URL, {
+      query: {
+        token: NotificationAPI.getToken(),
+        type: "user",
+      },
+    });
+    const handleNewNotification = () => {
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", userId, userRole],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["notification-stats", userId],
+      });
+
+      // Jouer le son de notification
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0; // Réinitialiser la position
+        audioRef.current.play().catch((error) => {
+          console.error("Erreur de lecture audio", error);
+        });
+      }
+    };
+
+    socket.on("notification:new", handleNewNotification);
+
+    return () => {
+      socket.off("notification:new", handleNewNotification);
+    };
+  }, [queryClient, userId, userRole]);
+
+  // ✅ Mutation pour marquer comme lu (optimiste)
   const markAsReadMutation = useMutation({
-    mutationFn: (notificationId: string) => NotificationAPI.markAsRead(notificationId),
-    onSuccess: (_, notificationId) => {
-      // Mise à jour optimiste
-      queryClient.setQueryData(['notifications', userId, userRole], (oldData: { pages: NotificationPage[] } | undefined) => {
-        if (!oldData) return oldData;
-        
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page: NotificationPage) => ({
-            ...page,
-            data: page.data.map((notification: Notification) =>
-              notification.id === notificationId
-                ? { ...notification, is_read: true }
-                : notification
-            )
-          }))
-        };
+    mutationFn: (notificationId: string) =>
+      NotificationAPI.markAsRead(notificationId),
+    onMutate: async (notificationId) => {
+      await queryClient.cancelQueries({
+        queryKey: ["notifications", userId, userRole],
       });
-      
-      // Invalider les stats
-      queryClient.invalidateQueries({ queryKey: ['notification-stats', userId] });
-    }
+
+      const previousNotifications = queryClient.getQueryData<
+        InfiniteData<NotificationPage>
+      >(["notifications", userId, userRole]);
+
+      if (previousNotifications) {
+        queryClient.setQueryData<InfiniteData<NotificationPage>>(
+          ["notifications", userId, userRole],
+          {
+            ...previousNotifications,
+            pages: previousNotifications.pages.map((page) => ({
+              ...page,
+              data: page.data.map((notification) =>
+                notification.id === notificationId
+                  ? { ...notification, is_read: true }
+                  : notification
+              ),
+            })),
+          }
+        );
+      }
+
+      return { previousNotifications };
+    },
+    onError: (err, _, context) => {
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(
+          ["notifications", userId, userRole],
+          context.previousNotifications
+        );
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["notification-stats", userId],
+      });
+    },
   });
 
-  // ✅ Mutation pour marquer comme non lu
+  // ✅ Mutation pour marquer comme non lu (optimiste)
+
   const markAsUnreadMutation = useMutation({
-    mutationFn: (notificationId: string) => NotificationAPI.markAsUnread(notificationId),
-    onSuccess: (_, notificationId) => {
-      // Mise à jour optimiste
-      queryClient.setQueryData(['notifications', userId, userRole], (oldData: { pages: NotificationPage[] } | undefined) => {
-        if (!oldData) return oldData;
-        
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page: NotificationPage) => ({
-            ...page,
-            data: page.data.map((notification: Notification) =>
-              notification.id === notificationId
-                ? { ...notification, is_read: false }
-                : notification
-            )
-          }))
-        };
+    mutationFn: (notificationId: string) =>
+      NotificationAPI.markAsUnread(notificationId),
+    onMutate: async (notificationId) => {
+      await queryClient.cancelQueries({
+        queryKey: ["notifications", userId, userRole],
       });
-      
-      // Invalider les stats
-      queryClient.invalidateQueries({ queryKey: ['notification-stats', userId] });
-    }
+
+      const previousNotifications = queryClient.getQueryData<
+        InfiniteData<NotificationPage>
+      >(["notifications", userId, userRole]);
+
+      if (previousNotifications) {
+        queryClient.setQueryData<InfiniteData<NotificationPage>>(
+          ["notifications", userId, userRole],
+          {
+            ...previousNotifications,
+            pages: previousNotifications.pages.map((page) => ({
+              ...page,
+              data: page.data.map((notification) =>
+                notification.id === notificationId
+                  ? { ...notification, is_read: false }
+                  : notification
+              ),
+            })),
+          }
+        );
+      }
+
+      return { previousNotifications };
+    },
+    onError: (err, _, context) => {
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(
+          ["notifications", userId, userRole],
+          context.previousNotifications
+        );
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["notification-stats", userId],
+      });
+    },
   });
 
-  // ✅ Mutation pour marquer toutes comme lues
+  // ✅ Mutation pour marquer toutes comme lues (optimiste)
   const markAllAsReadMutation = useMutation({
     mutationFn: () => NotificationAPI.markAllAsRead(userId),
-    onSuccess: () => {
-      // Mise à jour optimiste
-      queryClient.setQueryData(['notifications', userId, userRole], (oldData: { pages: NotificationPage[] } | undefined) => {
-        if (!oldData) return oldData;
-        
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page: NotificationPage) => ({
-            ...page,
-            data: page.data.map((notification: Notification) => ({
-              ...notification,
-              is_read: true
-            }))
-          }))
-        };
+    onMutate: async () => {
+      await queryClient.cancelQueries({
+        queryKey: ["notifications", userId, userRole],
       });
-      
-      // Invalider les stats
-      queryClient.invalidateQueries({ queryKey: ['notification-stats', userId] });
-    }
+
+      const previousNotifications = queryClient.getQueryData<
+        InfiniteData<NotificationPage>
+      >(["notifications", userId, userRole]);
+
+      if (previousNotifications) {
+        queryClient.setQueryData<InfiniteData<NotificationPage>>(
+          ["notifications", userId, userRole],
+          {
+            ...previousNotifications,
+            pages: previousNotifications.pages.map((page) => ({
+              ...page,
+              data: page.data.map((notification) => ({
+                ...notification,
+                is_read: true,
+              })),
+            })),
+          }
+        );
+      }
+
+      return { previousNotifications };
+    },
+    onError: (err, _, context) => {
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(
+          ["notifications", userId, userRole],
+          context.previousNotifications
+        );
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["notification-stats", userId],
+      });
+    },
   });
 
-  // ✅ Mutation pour supprimer une notification
+  // ✅ Mutation pour supprimer une notification (optimiste)
   const deleteNotificationMutation = useMutation({
-    mutationFn: (notificationId: string) => NotificationAPI.deleteNotification(notificationId),
-    onSuccess: (_, notificationId) => {
-      // Mise à jour optimiste
-      queryClient.setQueryData(['notifications', userId, userRole], (oldData: { pages: NotificationPage[] } | undefined) => {
-        if (!oldData) return oldData;
-        
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page: NotificationPage) => ({
-            ...page,
-            data: page.data.filter((notification: Notification) => notification.id !== notificationId)
-          }))
-        };
+    mutationFn: (notificationId: string) =>
+      NotificationAPI.deleteNotification(notificationId),
+    onMutate: async (notificationId) => {
+      await queryClient.cancelQueries({
+        queryKey: ["notifications", userId, userRole],
       });
-      
-      // Invalider les stats
-      queryClient.invalidateQueries({ queryKey: ['notification-stats', userId] });
-    }
+
+      const previousNotifications = queryClient.getQueryData<
+        InfiniteData<NotificationPage>
+      >(["notifications", userId, userRole]);
+
+      if (previousNotifications) {
+        queryClient.setQueryData<InfiniteData<NotificationPage>>(
+          ["notifications", userId, userRole],
+          {
+            ...previousNotifications,
+            pages: previousNotifications.pages.map((page) => ({
+              ...page,
+              data: page.data.filter(
+                (notification) => notification.id !== notificationId
+              ),
+            })),
+          }
+        );
+      }
+
+      return { previousNotifications };
+    },
+    onError: (err, _, context) => {
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(
+          ["notifications", userId, userRole],
+          context.previousNotifications
+        );
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["notification-stats", userId],
+      });
+    },
   });
 
   return {
-    // Données
     notifications,
-    totalNotifications,
-    
-    // États de chargement
     isLoading,
     isFetchingNextPage,
     hasNextPage,
-    error,
-    
-    // Actions
+    error: error as Error | null,
     fetchNextPage,
     refetch,
     markAsRead: markAsReadMutation.mutate,
     markAsUnread: markAsUnreadMutation.mutate,
     markAllAsRead: markAllAsReadMutation.mutate,
     deleteNotification: deleteNotificationMutation.mutate,
-    
-    // États des mutations
     isMarkingAsRead: markAsReadMutation.isPending,
     isMarkingAsUnread: markAsUnreadMutation.isPending,
     isMarkingAllAsRead: markAllAsReadMutation.isPending,

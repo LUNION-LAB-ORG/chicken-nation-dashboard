@@ -1,4 +1,4 @@
-import { apiRequest } from './api';
+import { apiRequest } from "./api";
 
 /**
  * Interface pour les notifications
@@ -50,72 +50,95 @@ export class NotificationAPI {
    * @param userId - ID de l'utilisateur
    * @returns Promise<Notification[]>
    */
-  static async getUserNotifications(userId: string): Promise<Notification[]> {
-    const endpoint = `/notifications/user/${userId}/USER`;
+
+  // Récupérer le token
+  static getToken() {
+    if (typeof document === "undefined") return null;
+    const cookies = document.cookie.split(";");
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split("=");
+      if (name === "chicken-nation-token") {
+        return decodeURIComponent(value);
+      }
+    }
+    return null;
+  }
+
+  static async getUserNotifications(
+    userId: string,
+    filters?: {
+      page?: number;
+      limit?: number;
+      type?: string;
+      isRead?: boolean;
+      target?: string;
+    }
+  ): Promise<NotificationResponse> {
+    const queryParams = new URLSearchParams();
+    if (filters?.page) queryParams.append("page", filters.page.toString());
+    if (filters?.limit) queryParams.append("limit", filters.limit.toString());
+    if (filters?.type) queryParams.append("type", filters.type);
+    if (filters?.isRead !== undefined)
+      queryParams.append("isRead", filters.isRead.toString());
+    if (filters?.target) queryParams.append("target", filters.target);
+
+    const endpoint = `/notifications/user/${userId}/USER${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
 
     try {
       console.log(`[NotificationAPI] Calling endpoint: ${endpoint}`);
 
       // ✅ Utiliser directement fetch pour plus de contrôle
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://chicken.turbodeliveryapp.com';
+      const baseUrl =
+        process.env.NEXT_PUBLIC_API_URL ||
+        "https://chicken.turbodeliveryapp.com";
       const fullUrl = `${baseUrl}/api/v1${endpoint}`;
 
-      // Récupérer le token
-      const getToken = () => {
-        if (typeof document === 'undefined') return null;
-        const cookies = document.cookie.split(';');
-        for (const cookie of cookies) {
-          const [name, value] = cookie.trim().split('=');
-          if (name === 'chicken-nation-token') {
-            return decodeURIComponent(value);
-          }
-        }
-        return null;
-      };
-
-      const token = getToken();
+      const token = NotificationAPI.getToken();
       if (!token) {
-        console.error('[NotificationAPI] No auth token found');
-        return [];
+        console.error("[NotificationAPI] No auth token found");
+        return {
+          data: [],
+          meta: { limit: 0, page: 1, total: 0, totalPages: 0 },
+        };
       }
 
       console.log(`[NotificationAPI] Making request to: ${fullUrl}`);
 
       const response = await fetch(fullUrl, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
       });
 
       console.log(`[NotificationAPI] Response status: ${response.status}`);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[NotificationAPI] HTTP Error ${response.status}:`, errorText);
-        return [];
+        console.error(
+          `[NotificationAPI] HTTP Error ${response.status}:`,
+          errorText
+        );
+        return {
+          data: [],
+          meta: { limit: 0, page: 1, total: 0, totalPages: 0 },
+        };
       }
 
       const data = await response.json();
       console.log(`[NotificationAPI] Response data:`, data);
 
-      // ✅ Gérer les différents formats de réponse
-      if (Array.isArray(data)) {
-        console.log(`[NotificationAPI] Direct array format, ${data.length} notifications`);
-        return data;
-      } else if (data && typeof data === 'object' && 'data' in data) {
-        const notifications = data.data || [];
-        console.log(`[NotificationAPI] Wrapper format, ${notifications.length} notifications`);
-        return notifications;
-      } else {
-        console.warn('[NotificationAPI] Format de réponse inattendu:', data);
-        return [];
-      }
+      return data;
     } catch (error) {
-      console.error(`[NotificationAPI] getUserNotifications - Error for userId ${userId}:`, error);
-      return []; // Retourner un tableau vide au lieu de throw en cas d'erreur
+      console.error(
+        `[NotificationAPI] getUserNotifications - Error for userId ${userId}:`,
+        error
+      );
+      return { data: [], meta: { limit: 0, page: 1, total: 0, totalPages: 0 } }; // Retourner un tableau vide au lieu de throw en cas d'erreur
     }
   }
 
@@ -125,36 +148,52 @@ export class NotificationAPI {
    * @param filters - Filtres optionnels (page, limit, userId, target, etc.)
    * @returns Promise<NotificationResponse>
    */
-  static async getAllNotifications(filters: {
-    page?: number;
-    limit?: number;
-    userId?: string;
-    type?: string;
-    is_read?: boolean;
-    target?: string;
-  } = {}): Promise<NotificationResponse> {
+  static async getAllNotifications(
+    filters: {
+      page?: number;
+      limit?: number;
+      userId?: string;
+      type?: string;
+      is_read?: boolean;
+      target?: string;
+    } = {}
+  ): Promise<NotificationResponse> {
     const queryParams = new URLSearchParams();
 
-    if (filters.page) queryParams.append('page', filters.page.toString());
-    if (filters.limit) queryParams.append('limit', filters.limit.toString());
-    if (filters.userId) queryParams.append('userId', filters.userId);
-    if (filters.type) queryParams.append('type', filters.type);
-    if (filters.is_read !== undefined) queryParams.append('is_read', filters.is_read.toString());
-    if (filters.target) queryParams.append('target', filters.target);
+    if (filters.page) queryParams.append("page", filters.page.toString());
+    if (filters.limit) queryParams.append("limit", filters.limit.toString());
+    if (filters.userId) queryParams.append("userId", filters.userId);
+    if (filters.type) queryParams.append("type", filters.type);
+    if (filters.is_read !== undefined)
+      queryParams.append("is_read", filters.is_read.toString());
+    if (filters.target) queryParams.append("target", filters.target);
 
-    const endpoint = `/notifications${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const endpoint = `/notifications${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
 
     try {
-      const response = await apiRequest<NotificationResponse>(endpoint, 'GET');
+      const response = await apiRequest<NotificationResponse>(endpoint, "GET");
       return response;
     } catch (error) {
       // ✅ SÉCURITÉ : Gestion gracieuse des erreurs CORS en développement
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        console.warn(`[NotificationAPI] CORS/Network error - returning empty notifications for development`);
-        return { data: [], meta: { limit: 10, page: 1, total: 0, totalPages: 0 } };
+      if (
+        error instanceof TypeError &&
+        error.message.includes("Failed to fetch")
+      ) {
+        console.warn(
+          `[NotificationAPI] CORS/Network error - returning empty notifications for development`
+        );
+        return {
+          data: [],
+          meta: { limit: 10, page: 1, total: 0, totalPages: 0 },
+        };
       }
       console.error(`[NotificationAPI] getAllNotifications - Error:`, error);
-      return { data: [], meta: { limit: 10, page: 1, total: 0, totalPages: 0 } };
+      return {
+        data: [],
+        meta: { limit: 10, page: 1, total: 0, totalPages: 0 },
+      };
     }
   }
 
@@ -163,11 +202,13 @@ export class NotificationAPI {
    * @param notificationId - ID de la notification
    * @returns Promise<Notification>
    */
-  static async getNotificationById(notificationId: string): Promise<Notification> {
+  static async getNotificationById(
+    notificationId: string
+  ): Promise<Notification> {
     const endpoint = `/notifications/${notificationId}`;
 
     try {
-      const response = await apiRequest<Notification>(endpoint, 'GET');
+      const response = await apiRequest<Notification>(endpoint, "GET");
       return response;
     } catch (error) {
       console.error(`[NotificationAPI] getNotificationById - Error:`, error);
@@ -180,16 +221,23 @@ export class NotificationAPI {
    * @param userId - ID de l'utilisateur
    * @returns Promise<NotificationStats>
    */
-  static async getNotificationStats(userId: string): Promise<NotificationStats> {
+  static async getNotificationStats(
+    userId: string
+  ): Promise<NotificationStats> {
     const endpoint = `/notifications/stats/${userId}/USER`;
 
     try {
-      const response = await apiRequest<NotificationStats>(endpoint, 'GET');
+      const response = await apiRequest<NotificationStats>(endpoint, "GET");
       return response;
     } catch (error) {
       // ✅ SÉCURITÉ : Gestion gracieuse des erreurs CORS en développement
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        console.warn(`[NotificationAPI] CORS/Network error - returning default stats for development`);
+      if (
+        error instanceof TypeError &&
+        error.message.includes("Failed to fetch")
+      ) {
+        console.warn(
+          `[NotificationAPI] CORS/Network error - returning default stats for development`
+        );
         return { total: 0, unread: 0, read: 0 };
       }
       console.error(`[NotificationAPI] getNotificationStats - Error:`, error);
@@ -206,7 +254,7 @@ export class NotificationAPI {
     const endpoint = `/notifications/${notificationId}/read`;
 
     try {
-      await apiRequest<void>(endpoint, 'PATCH');
+      await apiRequest<void>(endpoint, "PATCH");
     } catch (error) {
       console.error(`[NotificationAPI] markAsRead - Error:`, error);
       throw error;
@@ -222,7 +270,7 @@ export class NotificationAPI {
     const endpoint = `/notifications/${notificationId}/unread`;
 
     try {
-      await apiRequest<void>(endpoint, 'PATCH');
+      await apiRequest<void>(endpoint, "PATCH");
     } catch (error) {
       console.error(`[NotificationAPI] markAsUnread - Error:`, error);
       throw error;
@@ -238,7 +286,7 @@ export class NotificationAPI {
     const endpoint = `/notifications/user/${userId}/USER/read-all`;
 
     try {
-      await apiRequest<void>(endpoint, 'PATCH');
+      await apiRequest<void>(endpoint, "PATCH");
     } catch (error) {
       console.error(`[NotificationAPI] markAllAsRead - Error:`, error);
       throw error;
@@ -254,7 +302,7 @@ export class NotificationAPI {
     const endpoint = `/notifications/${notificationId}`;
 
     try {
-      await apiRequest<void>(endpoint, 'DELETE');
+      await apiRequest<void>(endpoint, "DELETE");
     } catch (error) {
       console.error(`[NotificationAPI] deleteNotification - Error:`, error);
       throw error;
@@ -266,12 +314,19 @@ export class NotificationAPI {
    * @param notificationIds - IDs des notifications à supprimer
    * @returns Promise<void>
    */
-  static async deleteMultipleNotifications(notificationIds: string[]): Promise<void> {
+  static async deleteMultipleNotifications(
+    notificationIds: string[]
+  ): Promise<void> {
     try {
-      const deletePromises = notificationIds.map(id => this.deleteNotification(id));
+      const deletePromises = notificationIds.map((id) =>
+        this.deleteNotification(id)
+      );
       await Promise.all(deletePromises);
     } catch (error) {
-      console.error(`[NotificationAPI] deleteMultipleNotifications - Error:`, error);
+      console.error(
+        `[NotificationAPI] deleteMultipleNotifications - Error:`,
+        error
+      );
       throw error;
     }
   }

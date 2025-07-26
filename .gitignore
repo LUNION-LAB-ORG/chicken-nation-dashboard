@@ -34,7 +34,7 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+.env
 
 # ✅ SÉCURITÉ : Fichiers contenant des credentials sensibles
 admin-info.env
