@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react'
 import OrderContextMenu from './OrderContextMenu'
 import Image from 'next/image';
 import { createPortal } from 'react-dom';
+import PaymentBadge, { PaymentStatus } from './PaymentBadge';
 
 interface OrderRowProps {
   order: Order
@@ -18,6 +19,7 @@ interface OrderRowProps {
   isMobile?: boolean
   showRestaurantColumn?: boolean // ✅ Contrôler l'affichage de la colonne Restaurant
   showActionsColumn?: boolean    // ✅ Contrôler l'affichage de la colonne Actions (menu hamburger)
+  paymentStatus?: PaymentStatus  // ✅ Statut de paiement pour le badge
 }
 
 const OrderTypeBadge = ({ type }: { type: Order['orderType'] }) => {
@@ -97,7 +99,7 @@ const formatAddress = (addressString: string) => {
   }
 };
 
-export function OrderRow({ order, isSelected, onSelect, onAccept, onReject, onViewDetails, onHideFromList, onRemoveFromList, isMobile = false, showRestaurantColumn = true, showActionsColumn = true }: OrderRowProps) {
+export function OrderRow({ order, isSelected, onSelect, onAccept, onReject, onViewDetails, onHideFromList, onRemoveFromList, isMobile = false, showRestaurantColumn = true, showActionsColumn = true, paymentStatus = 'PAID' }: OrderRowProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -171,6 +173,9 @@ export function OrderRow({ order, isSelected, onSelect, onAccept, onReject, onVi
               <div className="text-sm font-bold text-[#F17922]">{(order.totalPrice || 0).toLocaleString()} F</div>
               <StatusBadge order={order} />
             </div>
+            <div className="flex justify-between items-center mb-2">
+              <PaymentBadge status={paymentStatus} />
+            </div>
             {showActionsColumn && (
               <div className="flex justify-end mt-2">
                 <div className="relative">
@@ -232,6 +237,9 @@ export function OrderRow({ order, isSelected, onSelect, onAccept, onReject, onVi
       </td>
       <td className="whitespace-nowrap py-3 px-3 sm:px-4">
         <span className="text-sm font-medium">{(order.totalPrice || 0).toLocaleString()} F</span>
+      </td>
+      <td className="whitespace-nowrap py-3 px-3 sm:px-4">
+        <PaymentBadge status={paymentStatus} />
       </td>
       <td className="whitespace-nowrap py-3 px-3 sm:px-4">
         <StatusBadge order={order} />

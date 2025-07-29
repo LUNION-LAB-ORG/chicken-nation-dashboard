@@ -8,6 +8,19 @@ import { getRestaurantById } from '@/services/restaurantService';
 import { useRBAC } from '@/hooks/useRBAC';
 // import { OrderStatus } from '@/types/order'; // Import non utilisé
 import toast from 'react-hot-toast';
+import PaymentBadge, { PaymentStatus } from './PaymentBadge';
+
+// 🎯 FONCTION POUR DÉTERMINER LE STATUT DE PAIEMENT
+const getPaymentStatus = (orderDetails: any): PaymentStatus => {
+  // Si la commande est annulée, vérifier le statut du paiement
+  if (orderDetails?.status === 'CANCELLED') {
+    // Vérifier s'il y a un paiement avec le statut REVERTED
+    const hasRevertedPayment = orderDetails?.paiements?.some((p: any) => p.status === 'REVERTED');
+    return hasRevertedPayment ? 'REFUNDED' : 'TO_REFUND';
+  }
+  // Pour toutes les autres commandes, elles sont considérées comme payées
+  return 'PAID';
+};
 
 // ✅ Composant Image sécurisé pour éviter les erreurs d'URL invalide
 interface SafeImageProps {
@@ -25,16 +38,16 @@ const SafeImage: React.FC<SafeImageProps> = ({ src, alt, width, height, classNam
     if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '') {
       return '/images/food2.png';
     }
-    
+
     const cleanUrl = imageUrl.trim();
-    
+
     // Vérifier si c'est une URL valide
-    if (cleanUrl.startsWith('/') || 
-        cleanUrl.startsWith('http://') || 
-        cleanUrl.startsWith('https://')) {
+    if (cleanUrl.startsWith('/') ||
+      cleanUrl.startsWith('http://') ||
+      cleanUrl.startsWith('https://')) {
       return cleanUrl;
     }
-    
+
     // Si l'URL n'est pas valide, retourner l'image par défaut
     return '/images/food2.png';
   };
@@ -113,33 +126,33 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onReject, on
 
   useEffect(() => {
     console.log('[OrderDetails] Début useEffect - ID de commande:', order.id);
-    
+
     const fetchOrderDetails = async () => {
       if (!order.id) {
         console.log('[OrderDetails] Pas d\'ID de commande disponible');
         return;
       }
-      
+
       console.log('[OrderDetails] Tentative de récupération de la commande avec ID:', order.id);
       try {
         // Toujours utiliser fetchOrderById pour obtenir les données complètes de l'API
         if (fetchOrderById) {
           console.log('[OrderDetails] Utilisation de fetchOrderById (appel API)');
           const response = await fetchOrderById(order.id);
-          
+
           if (response) {
             console.log('[OrderDetails] Détails complets de la commande récupérés:', JSON.stringify(response, null, 2));
-            
+
             // Mettre à jour les détails complets
             setFullOrderDetails(response);
-            
+
             // Mettre à jour le statut si disponible
             if (response.status) {
               const newStatus = convertApiStatusToUiStatus(response.status);
               console.log('[OrderDetails] Mise à jour du statut:', response.status, '->', newStatus);
               setCurrentStatus(newStatus);
             }
-            
+
             // Extraire et mettre à jour les informations du restaurant
             if (response.restaurant && typeof response.restaurant === 'object' && response.restaurant.name) {
               console.log('[OrderDetails] Nom du restaurant trouvé dans l\'objet restaurant:', response.restaurant.name);
@@ -167,15 +180,15 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onReject, on
           // Fallback sur les données locales si l'API n'est pas disponible
           console.log('[OrderDetails] fetchOrderById non disponible, utilisation de getOrderById (données locales)');
           const response = getOrderById(order.id);
-          
+
           if (response) {
             console.log('[OrderDetails] Détails locaux de la commande récupérés:', response);
             setFullOrderDetails(response);
-            
+
             if (response.status) {
               setCurrentStatus(convertApiStatusToUiStatus(response.status));
             }
-            
+
             if (response.restaurant && typeof response.restaurant === 'object' && response.restaurant.name) {
               setRestaurantName(response.restaurant.name);
             } else if (response.restaurant_id) {
@@ -516,37 +529,37 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onReject, on
 
   // Utiliser les données étendues de l'objet order avec vérification supplémentaire
   const paymentMethod = order.paymentMethod || 'Non renseigné';
-  
+
   // Informations client avec vérification de disponibilité
-  const customerName = order.clientName || 
-    (fullOrderDetails?.customer && 
-     typeof fullOrderDetails.customer === 'object' && 
-     'first_name' in fullOrderDetails.customer && 
-     'last_name' in fullOrderDetails.customer ? 
-      `${String(fullOrderDetails.customer.first_name || '')} ${String(fullOrderDetails.customer.last_name || '')}`.trim() : 
+  const customerName = order.clientName ||
+    (fullOrderDetails?.customer &&
+      typeof fullOrderDetails.customer === 'object' &&
+      'first_name' in fullOrderDetails.customer &&
+      'last_name' in fullOrderDetails.customer ?
+      `${String(fullOrderDetails.customer.first_name || '')} ${String(fullOrderDetails.customer.last_name || '')}`.trim() :
       typeof fullOrderDetails?.fullname === 'string' ? fullOrderDetails.fullname : 'Client inconnu');
-    
-  const customerEmail = order.clientEmail || 
-    (fullOrderDetails?.customer && 
-     typeof fullOrderDetails.customer === 'object' && 
-     'email' in fullOrderDetails.customer ? 
-      String(fullOrderDetails.customer.email || '') : 
+
+  const customerEmail = order.clientEmail ||
+    (fullOrderDetails?.customer &&
+      typeof fullOrderDetails.customer === 'object' &&
+      'email' in fullOrderDetails.customer ?
+      String(fullOrderDetails.customer.email || '') :
       typeof fullOrderDetails?.email === 'string' ? fullOrderDetails.email : '');
-    
-  const customerPhone = order.clientPhone || 
-    (fullOrderDetails?.customer && 
-     typeof fullOrderDetails.customer === 'object' && 
-     'phone' in fullOrderDetails.customer ? 
-      String(fullOrderDetails.customer.phone || '') : 
+
+  const customerPhone = order.clientPhone ||
+    (fullOrderDetails?.customer &&
+      typeof fullOrderDetails.customer === 'object' &&
+      'phone' in fullOrderDetails.customer ?
+      String(fullOrderDetails.customer.phone || '') :
       typeof fullOrderDetails?.phone === 'string' ? fullOrderDetails.phone : '');
-    
-  const customerAddress = order.address || 
-    (fullOrderDetails?.address ? 
-      (typeof fullOrderDetails.address === 'string' ? 
-        fullOrderDetails.address : 
-        typeof fullOrderDetails.address === 'object' ? 
-          JSON.stringify(fullOrderDetails.address) : 
-          "Adresse non spécifiée") : 
+
+  const customerAddress = order.address ||
+    (fullOrderDetails?.address ?
+      (typeof fullOrderDetails.address === 'string' ?
+        fullOrderDetails.address :
+        typeof fullOrderDetails.address === 'object' ?
+          JSON.stringify(fullOrderDetails.address) :
+          "Adresse non spécifiée") :
       "Adresse non spécifiée");
 
 
@@ -588,7 +601,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onReject, on
   if (reservationDate) {
     try {
       const d = new Date(reservationDate);
-      formattedReservationDate = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+      formattedReservationDate = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
     } catch (error) {
       console.error('Erreur lors du formatage de la date de réservation:', error);
       formattedReservationDate = reservationDate;
@@ -603,10 +616,10 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onReject, on
 
   // Utiliser les données étendues pour les items avec calcul de secours
   const orderItems = order.items || [];
-  
+
   // Calcul du prix total avec vérification des sources alternatives
   let totalPrice = order.totalPrice || 0;
-  
+
   // Si le prix total n'est pas disponible dans l'objet order, essayer de le calculer à partir des données complètes
   if (totalPrice === 0 && fullOrderDetails) {
     // Essayer d'abord les champs directs
@@ -617,7 +630,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onReject, on
     } else if (typeof fullOrderDetails.price === 'number' && fullOrderDetails.price > 0) {
       totalPrice = fullOrderDetails.price;
     }
-    
+
     // Si toujours pas de prix, essayer de calculer à partir des items
     if (totalPrice === 0 && Array.isArray(fullOrderDetails.order_items) && fullOrderDetails.order_items.length > 0) {
       totalPrice = fullOrderDetails.order_items.reduce((sum, item) => {
@@ -630,19 +643,19 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onReject, on
         } else if (item.dish && typeof item.dish.price === 'number') {
           itemPrice = item.dish.price;
         }
-        
+
         const quantity = typeof item.quantity === 'number' ? item.quantity : 1;
         return sum + (itemPrice * quantity);
       }, 0);
     }
   }
-  
+
   // Autres informations de coût
   const tax = order.tax || (fullOrderDetails && typeof fullOrderDetails.tax === 'number' ? fullOrderDetails.tax : 0);
   const subtotal = order.subtotal || (fullOrderDetails && typeof fullOrderDetails.subtotal === 'number' ? fullOrderDetails.subtotal : totalPrice - tax);
   const discount = order.discount || (fullOrderDetails && typeof fullOrderDetails.discount === 'number' ? fullOrderDetails.discount : 0);
 
-   
+
 
 
   const getProgressStyles = () => {
@@ -738,7 +751,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onReject, on
   const formatAddress = (addressInput: string | object | unknown) => {
     // Si l'adresse est vide ou non définie
     if (!addressInput) return 'Adresse non disponible';
-    
+
     try {
       // Si l'adresse est déjà une chaîne
       if (typeof addressInput === 'string') {
@@ -755,23 +768,23 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onReject, on
         // Sinon retourner la chaîne telle quelle
         return addressInput;
       }
-      
+
       // Si l'adresse est un objet
       if (typeof addressInput === 'object' && addressInput !== null) {
         return formatAddressObject(addressInput as Record<string, unknown>);
       }
-      
+
       // Cas par défaut
       return String(addressInput) || 'Adresse non disponible';
     } catch {
       return 'Adresse non disponible';
     }
   };
-  
+
   // Fonction auxiliaire pour formater un objet adresse
   const formatAddressObject = (addressObj: Record<string, unknown>) => {
     const parts: string[] = [];
-    
+
     // Vérifier tous les champs possibles d'une adresse
     if (addressObj.title) parts.push(String(addressObj.title));
     if (addressObj.address) parts.push(String(addressObj.address));
@@ -782,10 +795,10 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onReject, on
     if (addressObj.postalCode || addressObj.postal_code) parts.push(String(addressObj.postalCode || addressObj.postal_code));
     if (addressObj.state) parts.push(String(addressObj.state));
     if (addressObj.country) parts.push(String(addressObj.country));
-    
+
     // Si l'objet a une propriété formattedAddress, l'utiliser directement
     if (addressObj.formattedAddress) return String(addressObj.formattedAddress);
-    
+
     // Sinon, joindre les parties disponibles
     return parts.join(', ') || 'Adresse non disponible';
   };
@@ -844,47 +857,14 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onBack, onReject, on
                   </div>
                 </div>
 
-                {/* Section de réservation - Afficher uniquement pour les commandes de type TABLE */}
-                {fullOrderDetails?.type === 'TABLE' && (
-                  <div className="mt-6 border-t pt-4 border-gray-200">
-                    <h3 className="text-lg font-medium mb-4 text-[#F17922]">Informations de réservation</h3>
-                    <div className="bg-[#FFF9F2] p-4 rounded-lg border border-[#FFE8D7]">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="flex items-center">
-                          <SafeImage src="/icons/table.png" alt="Table" width={20} height={20} className="mr-2" />
-                          <div>
-                            <span className="text-sm font-medium text-[#71717A]">Table</span>
-                            <p className="text-sm font-bold text-[#71717A]">{translateTableType(tableType) || 'Non spécifié'}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center">
-                          <SafeImage src="/icons/people.png" alt="Convives" width={20} height={20} className="mr-2" />
-                          <div>
-                            <span className="text-sm font-medium text-[#71717A]">Nombre de places</span>
-                            <p className="text-sm font-bold text-[#71717A]">{numberOfGuests || '0'} {numberOfGuests > 1 ? 'personnes' : 'personne'}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center">
-                          <SafeImage src="/icons/calendar.png" alt="Date" width={20} height={20} className="mr-2" />
-                          <div>
-                            <span className="text-sm font-medium text-[#71717A]">Date</span>
-                            <p className="text-sm font-bold text-[#71717A]">{formattedReservationDate || 'Non spécifiée'}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center">
-                          <SafeImage src="/icons/clock.png" alt="Heure" width={20} height={20} className="mr-2" />
-                          <div>
-                            <span className="text-sm font-medium text-[#71717A]">Heure</span>
-                            <p className="text-sm font-bold text-[#71717A]">{reservationTime || 'Non spécifiée'}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                <div className="flex gap-32  items-center">
+                  <p className="lg:text-sm text-xs font-medium text-[#71717A]">Statut paiement</p>
+                  <div className="flex items-center">
+                    <PaymentBadge status={getPaymentStatus(fullOrderDetails)} />
                   </div>
-                )}
+                </div>
+
+
               </div>
             </div>
 

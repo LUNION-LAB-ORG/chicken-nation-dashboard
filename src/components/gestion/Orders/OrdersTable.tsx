@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast'
 import { useOrdersQuery } from '@/hooks/useOrdersQuery'
 import { updateOrderStatus, deleteOrder, ApiOrderRaw } from '@/services/orderService'
 import { useRBAC } from '@/hooks/useRBAC'
+import { PaymentStatus } from './PaymentBadge'
 
 // Interface étendue pour les commandes UI
 export interface Order {
@@ -62,6 +63,12 @@ export interface Order {
   // Paiement
   paymentMethod?: string
   paymentStatus?: string
+  paiements?: Array<{
+    id?: string
+    method?: string
+    status?: string
+    amount?: number
+  }>
 
   // Notes
   notes?: string
@@ -93,6 +100,18 @@ interface OrdersTableProps {
   selectedDate?: Date | null;
   onSelectedDateChange?: (date: Date | null) => void;
 }
+
+// 🎯 FONCTION POUR DÉTERMINER LE STATUT DE PAIEMENT
+const getPaymentStatus = (order: Order): PaymentStatus => {
+  // Si la commande est annulée, vérifier le statut du paiement
+  if (order.status === 'ANNULÉE') {
+    // Vérifier s'il y a un paiement avec le statut REVERTED
+    const hasRevertedPayment = order.paiements?.some(p => p.status === 'REVERTED');
+    return hasRevertedPayment ? 'REFUNDED' : 'TO_REFUND';
+  }
+  // Pour toutes les autres commandes, elles sont considérées comme payées
+  return 'PAID';
+};
 
 // 🎯 MAPPING COMPLET ET EXACT API → UI
 const mapApiOrderToUiOrder = (apiOrder: ApiOrderRaw): Order => {
@@ -274,6 +293,7 @@ const mapApiOrderToUiOrder = (apiOrder: ApiOrderRaw): Order => {
     // ✅ Paiement - EXTRACTION EXACTE
     paymentMethod: extractPaymentMethod(apiOrder.paiements),
     paymentStatus: apiOrder.paied ? 'PAID' : 'PENDING',
+    paiements: apiOrder.paiements || [],
 
     // ✅ Notes - EXTRACTION EXACTE
     notes: apiOrder.note || '',
@@ -498,6 +518,7 @@ export function OrdersTable({
               onRemoveFromList={canDeleteCommande() ? handleRemoveOrder : undefined}
               isMobile={true}
               showActionsColumn={hasAnyActionPermission} // ✅ Cacher menu hamburger si aucune permission
+              paymentStatus={getPaymentStatus(order)} // ✅ Calculer le statut de paiement
             />
           ))}
         </div>
@@ -526,6 +547,7 @@ export function OrdersTable({
                   onRemoveFromList={canDeleteCommande() ? handleRemoveOrder : undefined}
                   showRestaurantColumn={currentUser?.role === 'ADMIN'} // ✅ Seulement pour ADMIN
                   showActionsColumn={hasAnyActionPermission} // ✅ Cacher menu hamburger si aucune permission
+                  paymentStatus={getPaymentStatus(order)} // ✅ Calculer le statut de paiement
                 />
               ))}
             </tbody>
