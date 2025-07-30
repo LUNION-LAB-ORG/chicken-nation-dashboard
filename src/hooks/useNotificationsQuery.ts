@@ -49,6 +49,7 @@ export const useNotificationsQuery = ({
   enabled,
 }: UseNotificationsQueryProps): UseNotificationsQueryReturn => {
   const queryClient = useQueryClient();
+
   const audioRef = useRef<HTMLAudioElement | null>(null); // Référence audio
   useEffect(() => {
     audioRef.current = new Audio("/musics/notification-sound.mp3");
@@ -91,7 +92,6 @@ export const useNotificationsQuery = ({
     () => data?.pages.flatMap((page) => page.data) || [],
     [data]
   );
-
   // ✅ Gestion des sockets
   useEffect(() => {
     const socket = io(SOCKET_URL, {
@@ -107,6 +107,9 @@ export const useNotificationsQuery = ({
       queryClient.invalidateQueries({
         queryKey: ["notification-stats", userId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["orders"],
+      });
 
       // Jouer le son de notification
       if (audioRef.current) {
@@ -118,9 +121,17 @@ export const useNotificationsQuery = ({
     };
 
     socket.on("notification:new", handleNewNotification);
+    socket.on("order:created", handleNewNotification);
+    socket.on("order:status_updated", handleNewNotification);
+    socket.on("order:updated", handleNewNotification);
+    socket.on("order:deleted", handleNewNotification);
 
     return () => {
       socket.off("notification:new", handleNewNotification);
+      socket.off("order:created", handleNewNotification);
+      socket.off("order:status_updated", handleNewNotification);
+      socket.off("order:updated", handleNewNotification);
+      socket.off("order:deleted", handleNewNotification);
     };
   }, [queryClient, userId, userRole]);
 

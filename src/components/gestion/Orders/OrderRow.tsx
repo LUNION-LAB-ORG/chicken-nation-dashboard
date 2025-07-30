@@ -231,7 +231,7 @@ export function OrderRow({ order, isSelected, onSelect, onAccept, onReject, onVi
         </span>
       </td>
       <td className="whitespace-nowrap py-3 px-3 sm:px-4">
-        <span className="text-sm font-medium">{(order.totalPrice || 0).toLocaleString()} F</span>
+        <span className="text-sm font-medium text-gray-500">{(order.totalPrice || 0).toLocaleString()} F</span>
       </td>
       <td className="whitespace-nowrap py-3 px-3 sm:px-4">
         <StatusBadge order={order} />
