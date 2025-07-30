@@ -26,7 +26,7 @@ export default function TestRBACPage() {
 
   const handleRoleChange = (role: UserRole) => {
     setSelectedRole(role)
-    
+
     // Simuler un utilisateur avec le rôle sélectionné
     const testUser = {
       id: 'test-user-' + role.toLowerCase(),
@@ -35,13 +35,13 @@ export default function TestRBACPage() {
       role: (role === 'CLIENT' ? 'EMPLOYEE' : role) as import('@/types/auth').User['role'],
       name: `Test ${role}`,
       restaurant_id: role === 'MANAGER' ? 'test-restaurant-id' : undefined,
-      type: (role === 'ADMIN' || role === 'MARKETING' || role === 'COMPTABLE' || role === 'MANAGER' 
-        ? 'BACKOFFICE' 
-        : role === 'CLIENT' 
-          ? 'CUSTOMER' 
+      type: (role === 'ADMIN' || role === 'MARKETING' || role === 'COMPTABLE' || role === 'MANAGER'
+        ? 'BACKOFFICE'
+        : role === 'CLIENT'
+          ? 'CUSTOMER'
           : 'RESTAURANT') as import('@/types/auth').User['type'],
     }
-    
+
     setUser(testUser)
   }
 
@@ -63,11 +63,10 @@ export default function TestRBACPage() {
                 <button
                   key={role.value}
                   onClick={() => handleRoleChange(role.value)}
-                  className={`p-4 rounded-lg border-2 text-left transition-all ${
-                    selectedRole === role.value
-                      ? 'border-blue-500 bg-blue-50 text-blue-900'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                  }`}
+                  className={`p-4 rounded-lg border-2 text-left transition-all ${selectedRole === role.value
+                    ? 'border-blue-500 bg-blue-50 text-blue-900'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                    }`}
                 >
                   <div className="font-semibold">{role.label}</div>
                   <div className="text-sm text-gray-500 mt-1">{role.description}</div>

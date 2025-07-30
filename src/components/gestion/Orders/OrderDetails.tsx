@@ -7,7 +7,20 @@ import { useOrderStore } from "@/store/orderStore";
 import { getRestaurantById } from "@/services/restaurantService";
 import { useRBAC } from "@/hooks/useRBAC";
 // import { OrderStatus } from '@/types/order'; // Import non utilisé
-import toast from "react-hot-toast";
+import toast from 'react-hot-toast';
+import PaymentBadge, { PaymentStatus } from './PaymentBadge';
+
+// 🎯 FONCTION POUR DÉTERMINER LE STATUT DE PAIEMENT
+const getPaymentStatus = (orderDetails: any): PaymentStatus => {
+  // Si la commande est annulée, vérifier le statut du paiement
+  if (orderDetails?.status === 'CANCELLED') {
+    // Vérifier s'il y a un paiement avec le statut REVERTED
+    const hasRevertedPayment = orderDetails?.paiements?.some((p: any) => p.status === 'REVERTED');
+    return hasRevertedPayment ? 'REFUNDED' : 'TO_REFUND';
+  }
+  // Pour toutes les autres commandes, elles sont considérées comme payées
+  return 'PAID';
+};
 
 // ✅ Composant Image sécurisé pour éviter les erreurs d'URL invalide
 interface SafeImageProps {
@@ -36,11 +49,9 @@ const SafeImage: React.FC<SafeImageProps> = ({
     const cleanUrl = imageUrl.trim();
 
     // Vérifier si c'est une URL valide
-    if (
-      cleanUrl.startsWith("/") ||
-      cleanUrl.startsWith("http://") ||
-      cleanUrl.startsWith("https://")
-    ) {
+    if (cleanUrl.startsWith('/') ||
+      cleanUrl.startsWith('http://') ||
+      cleanUrl.startsWith('https://')) {
       return cleanUrl;
     }
 
@@ -131,7 +142,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({
   );
 
   useEffect(() => {
-    console.log("[OrderDetails] Début useEffect - ID de commande:", order.id);
+    console.log('[OrderDetails] Début useEffect - ID de commande:', order.id);
 
     const fetchOrderDetails = async () => {
       if (!order.id) {
@@ -139,10 +150,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({
         return;
       }
 
-      console.log(
-        "[OrderDetails] Tentative de récupération de la commande avec ID:",
-        order.id
-      );
+      console.log('[OrderDetails] Tentative de récupération de la commande avec ID:', order.id);
       try {
         // Toujours utiliser fetchOrderById pour obtenir les données complètes de l'API
         if (fetchOrderById) {
@@ -152,10 +160,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({
           const response = await fetchOrderById(order.id);
 
           if (response) {
-            console.log(
-              "[OrderDetails] Détails complets de la commande récupérés:",
-              JSON.stringify(response, null, 2)
-            );
+            console.log('[OrderDetails] Détails complets de la commande récupérés:', JSON.stringify(response, null, 2));
 
             // Mettre à jour les détails complets
             setFullOrderDetails(response);
@@ -236,11 +241,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({
               setCurrentStatus(convertApiStatusToUiStatus(response.status));
             }
 
-            if (
-              response.restaurant &&
-              typeof response.restaurant === "object" &&
-              response.restaurant.name
-            ) {
+            if (response.restaurant && typeof response.restaurant === 'object' && response.restaurant.name) {
               setRestaurantName(response.restaurant.name);
             } else if (response.restaurant_id) {
               setRestaurantName(String(response.restaurant_id || ""));
@@ -573,8 +574,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({
   // };
 
   // Utiliser les données étendues de l'objet order avec vérification supplémentaire
-  const paymentMethod = order.paymentMethod || "Non renseigné";
-
+  const paymentMethod = order.paymentMethod || 'Non renseigné';
   // Informations client avec vérification de disponibilité
   const customerName =
     order.clientName ||
@@ -659,11 +659,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({
   if (reservationDate) {
     try {
       const d = new Date(reservationDate);
-      formattedReservationDate = `${d.getDate().toString().padStart(2, "0")}/${(
-        d.getMonth() + 1
-      )
-        .toString()
-        .padStart(2, "0")}/${d.getFullYear()}`;
+      formattedReservationDate = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
     } catch (error) {
       console.error(
         "Erreur lors du formatage de la date de réservation:",
@@ -720,28 +716,19 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({
           itemPrice = item.dish.price;
         }
 
-        const quantity = typeof item.quantity === "number" ? item.quantity : 1;
-        return sum + itemPrice * quantity;
+        const quantity = typeof item.quantity === 'number' ? item.quantity : 1;
+        return sum + (itemPrice * quantity);
       }, 0);
     }
   }
 
   // Autres informations de coût
-  const tax =
-    order.tax ||
-    (fullOrderDetails && typeof fullOrderDetails.tax === "number"
-      ? fullOrderDetails.tax
-      : 0);
-  const subtotal =
-    order.subtotal ||
-    (fullOrderDetails && typeof fullOrderDetails.subtotal === "number"
-      ? fullOrderDetails.subtotal
-      : totalPrice - tax);
-  const discount =
-    order.discount ||
-    (fullOrderDetails && typeof fullOrderDetails.discount === "number"
-      ? fullOrderDetails.discount
-      : 0);
+  const tax = order.tax || (fullOrderDetails && typeof fullOrderDetails.tax === 'number' ? fullOrderDetails.tax : 0);
+  const subtotal = order.subtotal || (fullOrderDetails && typeof fullOrderDetails.subtotal === 'number' ? fullOrderDetails.subtotal : totalPrice - tax);
+  const discount = order.discount || (fullOrderDetails && typeof fullOrderDetails.discount === 'number' ? fullOrderDetails.discount : 0);
+
+
+
 
   const getProgressStyles = () => {
     const styles = {
@@ -840,7 +827,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({
   // Fonction améliorée pour formater l'adresse avec gestion de tous les formats possibles
   const formatAddress = (addressInput: string | object | unknown) => {
     // Si l'adresse est vide ou non définie
-    if (!addressInput) return "Adresse non disponible";
+    if (!addressInput) return 'Adresse non disponible';
 
     try {
       // Si l'adresse est déjà une chaîne
@@ -975,90 +962,14 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({
                   </div>
                 </div>
 
-                {/* Section de réservation - Afficher uniquement pour les commandes de type TABLE */}
-                {fullOrderDetails?.type === "TABLE" && (
-                  <div className="mt-6 border-t pt-4 border-gray-200">
-                    <h3 className="text-lg font-medium mb-4 text-[#F17922]">
-                      Informations de réservation
-                    </h3>
-                    <div className="bg-[#FFF9F2] p-4 rounded-lg border border-[#FFE8D7]">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="flex items-center">
-                          <SafeImage
-                            src="/icons/table.png"
-                            alt="Table"
-                            width={20}
-                            height={20}
-                            className="mr-2"
-                          />
-                          <div>
-                            <span className="text-sm font-medium text-[#71717A]">
-                              Table
-                            </span>
-                            <p className="text-sm font-bold text-[#71717A]">
-                              {translateTableType(tableType) || "Non spécifié"}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center">
-                          <SafeImage
-                            src="/icons/people.png"
-                            alt="Convives"
-                            width={20}
-                            height={20}
-                            className="mr-2"
-                          />
-                          <div>
-                            <span className="text-sm font-medium text-[#71717A]">
-                              Nombre de places
-                            </span>
-                            <p className="text-sm font-bold text-[#71717A]">
-                              {numberOfGuests || "0"}{" "}
-                              {numberOfGuests > 1 ? "personnes" : "personne"}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center">
-                          <SafeImage
-                            src="/icons/calendar.png"
-                            alt="Date"
-                            width={20}
-                            height={20}
-                            className="mr-2"
-                          />
-                          <div>
-                            <span className="text-sm font-medium text-[#71717A]">
-                              Date
-                            </span>
-                            <p className="text-sm font-bold text-[#71717A]">
-                              {formattedReservationDate || "Non spécifiée"}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center">
-                          <SafeImage
-                            src="/icons/clock.png"
-                            alt="Heure"
-                            width={20}
-                            height={20}
-                            className="mr-2"
-                          />
-                          <div>
-                            <span className="text-sm font-medium text-[#71717A]">
-                              Heure
-                            </span>
-                            <p className="text-sm font-bold text-[#71717A]">
-                              {reservationTime || "Non spécifiée"}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                <div className="flex gap-32  items-center">
+                  <p className="lg:text-sm text-xs font-medium text-[#71717A]">Statut paiement</p>
+                  <div className="flex items-center">
+                    <PaymentBadge status={getPaymentStatus(fullOrderDetails)} />
                   </div>
-                )}
+                </div>
+
+
               </div>
             </div>
 
